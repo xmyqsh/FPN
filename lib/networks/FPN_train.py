@@ -362,8 +362,8 @@ class FPN_train(Network):
         #========= RCNN ============
         (self.feed('P2', 'P3', 'P4', 'P5', 'roi-data')
              .fpn_roi_pool(7, 7, name='fpn_roi_pooling')
-             .fc(4096, name='fc6')
-             .fc(4096, name='fc7')
+             .fc(1024, name='fc6')
+             .fc(1024, name='fc7')
              .fc(n_classes, relu=False, name='cls_score')
              .softmax(name='cls_prob'))
 
