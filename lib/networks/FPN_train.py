@@ -27,8 +27,6 @@ class FPN_train(Network):
     def setup(self):
 
         n_classes = cfg.NCLASSES
-        # anchor_scales = [8, 16, 32]
-        # anchor_scales = cfg.ANCHOR_SCALES
         num_anchor_ratio = 3 # 1:2, 1:1, 2:1
         anchor_size = [None, None, 32, 64, 128, 256, 512] # P6 is not implemented in this version
         _feat_stride = [None, 2, 4, 8, 16, 32, 64]
@@ -47,7 +45,7 @@ class FPN_train(Network):
              .conv(1, 1, 256, 1, 1, biased=False, relu=False, name='res2a_branch2c')
              .batch_normalization(name='bn2a_branch2c',is_training=False,relu=False))
 
-        (self.feed('bn2a_branch1', 
+        (self.feed('bn2a_branch1',
                    'bn2a_branch2c')
              .add(name='res2a')
              .relu(name='res2a_relu')
@@ -58,7 +56,7 @@ class FPN_train(Network):
              .conv(1, 1, 256, 1, 1, biased=False, relu=False, name='res2b_branch2c')
              .batch_normalization(name='bn2b_branch2c',is_training=False,relu=False))
 
-        (self.feed('res2a_relu', 
+        (self.feed('res2a_relu',
                    'bn2b_branch2c')
              .add(name='res2b')
              .relu(name='res2b_relu')
@@ -69,7 +67,7 @@ class FPN_train(Network):
              .conv(1, 1, 256, 1, 1, biased=False, relu=False, name='res2c_branch2c')
              .batch_normalization(name='bn2c_branch2c',is_training=False,relu=False))
 
-        (self.feed('res2b_relu', 
+        (self.feed('res2b_relu',
                    'bn2c_branch2c')
              .add(name='res2c')
              .relu(name='res2c_relu')
@@ -84,7 +82,7 @@ class FPN_train(Network):
              .conv(1, 1, 512, 1, 1, biased=False, relu=False, name='res3a_branch2c')
              .batch_normalization(name='bn3a_branch2c',is_training=False,relu=False))
 
-        (self.feed('bn3a_branch1', 
+        (self.feed('bn3a_branch1',
                    'bn3a_branch2c')
              .add(name='res3a')
              .relu(name='res3a_relu')
@@ -95,7 +93,7 @@ class FPN_train(Network):
              .conv(1, 1, 512, 1, 1, biased=False, relu=False, name='res3b_branch2c')
              .batch_normalization(name='bn3b_branch2c',is_training=False,relu=False))
 
-        (self.feed('res3a_relu', 
+        (self.feed('res3a_relu',
                    'bn3b_branch2c')
              .add(name='res3b')
              .relu(name='res3b_relu')
@@ -106,7 +104,7 @@ class FPN_train(Network):
              .conv(1, 1, 512, 1, 1, biased=False, relu=False, name='res3c_branch2c')
              .batch_normalization(name='bn3c_branch2c',is_training=False,relu=False))
 
-        (self.feed('res3b_relu', 
+        (self.feed('res3b_relu',
                    'bn3c_branch2c')
              .add(name='res3c')
              .relu(name='res3c_relu')
@@ -117,7 +115,7 @@ class FPN_train(Network):
              .conv(1, 1, 512, 1, 1, biased=False, relu=False, name='res3d_branch2c')
              .batch_normalization(name='bn3d_branch2c',is_training=False,relu=False))
 
-        (self.feed('res3c_relu', 
+        (self.feed('res3c_relu',
                    'bn3d_branch2c')
              .add(name='res3d')
              .relu(name='res3d_relu')
@@ -132,7 +130,7 @@ class FPN_train(Network):
              .conv(1, 1, 1024, 1, 1, biased=False, relu=False, name='res4a_branch2c')
              .batch_normalization(name='bn4a_branch2c',is_training=False,relu=False))
 
-        (self.feed('bn4a_branch1', 
+        (self.feed('bn4a_branch1',
                    'bn4a_branch2c')
              .add(name='res4a')
              .relu(name='res4a_relu')
@@ -143,7 +141,7 @@ class FPN_train(Network):
              .conv(1, 1, 1024, 1, 1, biased=False, relu=False, name='res4b_branch2c')
              .batch_normalization(name='bn4b_branch2c',is_training=False,relu=False))
 
-        (self.feed('res4a_relu', 
+        (self.feed('res4a_relu',
                    'bn4b_branch2c')
              .add(name='res4b')
              .relu(name='res4b_relu')
@@ -154,7 +152,7 @@ class FPN_train(Network):
              .conv(1, 1, 1024, 1, 1, biased=False, relu=False, name='res4c_branch2c')
              .batch_normalization(name='bn4c_branch2c',is_training=False,relu=False))
 
-        (self.feed('res4b_relu', 
+        (self.feed('res4b_relu',
                    'bn4c_branch2c')
              .add(name='res4c')
              .relu(name='res4c_relu')
@@ -165,7 +163,7 @@ class FPN_train(Network):
              .conv(1, 1, 1024, 1, 1, biased=False, relu=False, name='res4d_branch2c')
              .batch_normalization(name='bn4d_branch2c',is_training=False,relu=False))
 
-        (self.feed('res4c_relu', 
+        (self.feed('res4c_relu',
                    'bn4d_branch2c')
              .add(name='res4d')
              .relu(name='res4d_relu')
@@ -176,7 +174,7 @@ class FPN_train(Network):
              .conv(1, 1, 1024, 1, 1, biased=False, relu=False, name='res4e_branch2c')
              .batch_normalization(name='bn4e_branch2c',is_training=False,relu=False))
 
-        (self.feed('res4d_relu', 
+        (self.feed('res4d_relu',
                    'bn4e_branch2c')
              .add(name='res4e')
              .relu(name='res4e_relu')
@@ -187,7 +185,7 @@ class FPN_train(Network):
              .conv(1, 1, 1024, 1, 1, biased=False, relu=False, name='res4f_branch2c')
              .batch_normalization(name='bn4f_branch2c',is_training=False,relu=False))
 
-        (self.feed('res4e_relu', 
+        (self.feed('res4e_relu',
                    'bn4f_branch2c')
              .add(name='res4f')
              .relu(name='res4f_relu'))
@@ -214,8 +212,8 @@ class FPN_train(Network):
              .batch_normalization(relu=True, name='bn5b_branch2b',is_training=False)
              .conv(1, 1, 2048, 1, 1, biased=False, relu=False, name='res5b_branch2c')
              .batch_normalization(name='bn5b_branch2c',is_training=False,relu=False))
-        #pdb.set_trace()
-        (self.feed('res5a_relu', 
+
+        (self.feed('res5a_relu',
                    'bn5b_branch2c')
              .add(name='res5b')
              .relu(name='res5b_relu')
@@ -225,7 +223,7 @@ class FPN_train(Network):
              .batch_normalization(relu=True, name='bn5c_branch2b',is_training=False)
              .conv(1, 1, 2048, 1, 1, biased=False, relu=False, name='res5c_branch2c')
              .batch_normalization(name='bn5c_branch2c',is_training=False,relu=False))
-        #pdb.set_trace()
+
         (self.feed('res5b_relu',
         	       'bn5c_branch2c')
              .add(name='res5c')
@@ -242,8 +240,6 @@ class FPN_train(Network):
 
         (self.feed('res4f_relu') # C4
              .conv(1, 1, 256, 1, 1, biased=True, relu=False, name='C4_lateral'))
-
-        upshape_C4 = tf.shape(self.feed('C4'))
 
         (self.feed('P5',
                    'C4_lateral')
@@ -277,7 +273,6 @@ class FPN_train(Network):
                    'C2_lateral')
              .add(name='P2_pre')
              .conv(3, 3, 256, 1, 1, biased=True, relu= False, name='P2'))
-
 
 
         #========= RPN ============
