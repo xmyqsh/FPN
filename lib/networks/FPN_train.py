@@ -370,8 +370,84 @@ class FPN_train(Network):
         (self.feed('fc7')
              .fc(n_classes*4, relu=False, name='bbox_pred'))
 
+    def RPN_loss(self, P):
+        ############# RPN
+        # classification loss
+        rpn_cls_score = tf.reshape(self.get_output('rpn_cls_score_reshape/' + P), [-1, 2])  # shape (HxWxA, 2)
+        rpn_label = tf.reshape(self.get_output('rpn-data/' + P)[0], [-1])  # shape (HxWxA)
+        # ignore_label(-1)
+        fg_keep = tf.equal(rpn_label, 1)
+        rpn_keep = tf.where(tf.not_equal(rpn_label, -1))
+        rpn_cls_score = tf.reshape(tf.gather(rpn_cls_score, rpn_keep), [-1, 2]) # shape (N, 2)
+        rpn_label = tf.reshape(tf.gather(rpn_label, rpn_keep), [-1])
+        rpn_cross_entropy_n = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=rpn_cls_score, labels=rpn_label)
+        rpn_cross_entropy = tf.reduce_mean(rpn_cross_entropy_n)
+
+        # box loss
+        rpn_bbox_pred = self.get_output('rpn_bbox_pred/' + P) # shape (1, H, W, Ax4)
+        rpn_bbox_targets = self.get_output('rpn-data/' + P)[1]
+        rpn_bbox_inside_weights = self.get_output('rpn-data/' + P)[2]
+        rpn_bbox_outside_weights = self.get_output('rpn-data/' + P)[3]
+        rpn_bbox_pred = tf.reshape(tf.gather(tf.reshape(rpn_bbox_pred, [-1, 4]), rpn_keep), [-1, 4]) # shape (N, 4)
+        rpn_bbox_targets = tf.reshape(tf.gather(tf.reshape(rpn_bbox_targets, [-1, 4]), rpn_keep), [-1, 4])
+        rpn_bbox_inside_weights = tf.reshape(tf.gather(tf.reshape(rpn_bbox_inside_weights, [-1, 4]), rpn_keep), [-1, 4])
+        rpn_bbox_outside_weights = tf.reshape(tf.gather(tf.reshape(rpn_bbox_outside_weights, [-1, 4]), rpn_keep), [-1, 4])
+
+        rpn_loss_box_n = tf.reduce_sum(self.smooth_l1_dist(
+            rpn_bbox_inside_weights * (rpn_bbox_pred - rpn_bbox_targets)), axis=[1])
+        rpn_loss_box = tf.reduce_sum(rpn_loss_box_n) / (tf.reduce_sum(tf.cast(fg_keep, tf.float32)) + 1.0)
+
+        return rpn_cross_entropy, rpn_loss_box
+
+
     def build_loss(self):
         # TODO:
+        ############# RPN
+        rpn_cross_entropy_P2, rpn_loss_box_P2 = RPN_loss('P2');
+        rpn_cross_entropy_P3, rpn_loss_box_P3 = RPN_loss('P3');
+        rpn_cross_entropy_P4, rpn_loss_box_P4 = RPN_loss('P4');
+        rpn_cross_entropy_P5, rpn_loss_box_P5 = RPN_loss('P5');
+
+        rpn_cross_entropy = rpn_cross_entropy_P2 + \
+                            rpn_cross_entropy_P3 + \
+                            rpn_cross_entropy_P4 + \
+                            rpn_cross_entropy_P5
+
+        rpn_loss_box = rpn_loss_box_P2 + \
+                       rpn_loss_box_P3 + \
+                       rpn_loss_box_P4 + \
+                       rpn_loss_box_P5
+
+        ############# R-CNN
+        # classification loss
+        cls_score = self.get_output('cls_score') # (R, C+1)
+        label = tf.reshape(self.get_output('roi-data')[1], [-1]) # (R)
+        cross_entropy_n = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=cls_score, labels=label)
+
+        # bounding box regression L1 loss
+        bbox_pred = self.get_output('bbox_pred') # (R, (C+1)x4)
+        bbox_targets = self.get_output('roi-data')[2] # (R, (C+1)x4)
+        # each element is {0, 1}, represents background (0), objects (1)
+        bbox_inside_weights = self.get_output('roi-data')[3] # (R, (C+1)x4)
+        bbox_outside_weights = self.get_output('roi-data')[4] # (R, (C+1)x4)
+
+        loss_box_n = tf.reduce_sum( \
+            bbox_outside_weights * self.smooth_l1_dist(bbox_inside_weights * (bbox_pred - bbox_targets)), \
+            axis=[1])
+
+        loss_n = loss_box_n + cross_entropy_n
+        loss_n = tf.reshape(loss_n, [-1])
+
+        loss_box = tf.reduce_mean(loss_box_n)
+        cross_entropy = tf.reduce_mean(cross_entropy_n)
+
+        loss = cross_entropy + loss_box + rpn_cross_entropy + rpn_loss_box
+
+        # add regularizer
+        if cfg.TRAIN.WEIGHT_DECAY > 0:
+            regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            loss = tf.add_n(regularization_losses) + loss
+
         return loss, cross_entropy, loss_box, rpn_cross_entropy, rpn_loss_box, \
                                               rpn_cross_entropy_P2, rpn_loss_box_P2, \
                                               rpn_cross_entropy_P3, rpn_loss_box_P3, \
