@@ -276,6 +276,8 @@ class FPN_train(Network):
 
 
         #========= RPN ============
+        # TODO: the head of 3×3 conv and two sibling 1×1 convs in each pyramid could share weights,
+        #       add a shared weights version for comparison
         # P2
         (self.feed('P2')
              .conv(3,3,512,1,1,name='rpn_conv/3x3/P2')
