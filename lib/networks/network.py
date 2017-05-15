@@ -8,6 +8,7 @@ from ..rpn_msr.anchor_target_layer_tf import anchor_target_layer as anchor_targe
 from ..rpn_msr.proposal_target_layer_tf import proposal_target_layer as proposal_target_layer_py
 # FCN pooling
 from ..psroi_pooling_layer import psroi_pooling_op as psroi_pooling_op
+from ..fpn_roi_pooling_layer import fpn_roi_pooling_op as fpn_roi_pool_op
 
 
 DEFAULT_PADDING = 'SAME'
