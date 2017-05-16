@@ -156,8 +156,8 @@ class Network(object):
 
     @layer
     def upbilinear(self, input, name):
-        up_h = input[1].get_shape()[1].value
-        up_w = input[1].get_shape()[2].value
+        up_h = tf.shape(input[1])[1]
+        up_w = tf.shape(input[1])[2]
         return tf.image.resize_bilinear(input[0], [up_h, up_w], name=name)
 
     @layer
@@ -315,12 +315,13 @@ class Network(object):
             # 'rpn_cls_prob_reshape/P4', 'rpn_bbox_pred/P4',
             # 'rpn_cls_prob_reshape/P5', 'rpn_bbox_pred/P5',
             # 'im_info'
-            return tf.reshape(tf.py_func(proposal_layer_py,\
+            with tf.variable_scope(name) as scope:
+                return tf.reshape(tf.py_func(proposal_layer_py,\
                                      [input[0], input[1], input[2], input[3],\
                                       input[4], input[5], input[6], input[7],\
                                       input[8], cfg_key, _feat_strides, anchor_sizes],\
                                      [tf.float32]),\
-                                     [-1,5],name =name)
+                                     [-1,5], name = 'rpn_rois')
 
         with tf.variable_scope(name) as scope:
             rpn_rois_P2, rpn_rois_P3, rpn_rois_P4, rpn_rois_P5 = tf.py_func(proposal_layer_py,\
