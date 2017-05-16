@@ -10,7 +10,7 @@ from .network import Network
 from ..fast_rcnn.config import cfg
 
 
-class FPN_train(Network):
+class FPN_test(Network):
     def __init__(self, trainable=True):
         self.inputs = []
         self.data = tf.placeholder(tf.float32, shape=[None, None, None, 3], name='data')
