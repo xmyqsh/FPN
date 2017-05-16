@@ -175,7 +175,30 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
     # batch inds are 0
     batch_inds = np.zeros((proposals.shape[0], 1), dtype=np.float32)
     blob = np.hstack((batch_inds, proposals.astype(np.float32, copy=False)))
-    return blob
+
+    rpn_rois = blob
+
+    if cfg_key == 'TEST':
+        # assign rois to level Pk    (P2 ~ P5)
+        def calc_level(width, height):
+            return min(5, max(2, int(4 + np.log2(np.sqrt(width * height) / 224))))
+
+        level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
+
+        leveled_rois = [[], [], [], []]
+        leveled_rois[0] = [roi for level, roi in zip(levels, rois) if level(roi) == 2]
+        leveled_rois[1] = [roi for level, roi in zip(levels, rois) if level(roi) == 3]
+        leveled_rois[2] = [roi for level, roi in zip(levels, rois) if level(roi) == 4]
+        leveled_rois[3] = [roi for level, roi in zip(levels, rois) if level(roi) == 5]
+
+        leveled_rois[0] = np.array(leveled_rois[0])
+        leveled_rois[1] = np.array(leveled_rois[1])
+        leveled_rois[2] = np.array(leveled_rois[2])
+        leveled_rois[3] = np.array(leveled_rois[3])
+
+        return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3]
+
+    return rpn_rois
     #top[0].reshape(*(blob.shape))
     #top[0].data[...] = blob
 
