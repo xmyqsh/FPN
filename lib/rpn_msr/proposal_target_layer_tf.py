@@ -109,15 +109,15 @@ def proposal_target_layer(rpn_rois, gt_boxes, gt_ishard, dontcare_areas, _num_cl
     leveled_rois[2] = [roi for roi in rois if level(roi) == 4]
     leveled_rois[3] = [roi for roi in rois if level(roi) == 5]
 
-    leveled_rois[0] = np.array(leveled_rois[0])
-    leveled_rois[1] = np.array(leveled_rois[1])
-    leveled_rois[2] = np.array(leveled_rois[2])
-    leveled_rois[3] = np.array(leveled_rois[3])
+    leveled_rois[0] = np.array(leveled_rois[0]).astype(np.float32)
+    leveled_rois[1] = np.array(leveled_rois[1]).astype(np.float32)
+    leveled_rois[2] = np.array(leveled_rois[2]).astype(np.float32)
+    leveled_rois[3] = np.array(leveled_rois[3]).astype(np.float32)
 
     #leveled_rois = np.array(leveled_rois)
 
     return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3], \
-            labels, bbox_targets, bbox_inside_weights, bbox_outside_weights
+            labels, bbox_targets, bbox_inside_weights, bbox_outside_weights, rois
 
 def _sample_rois(all_rois, gt_boxes, gt_ishard, dontcare_areas, fg_rois_per_image, rois_per_image, num_classes):
     """Generate a random sample of RoIs comprising foreground and background
