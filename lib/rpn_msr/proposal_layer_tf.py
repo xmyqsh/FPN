@@ -59,13 +59,20 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
 
     """
     anchor_scales = np.array(anchor_sizes) / np.array(_feat_strides)
-    _anchors = [generate_anchors(base_size=_feat_stride, scales=anchor_scale) for _feat_stride, anchor_scale in zip(_feat_strides, anchor_scales)]
+
+    # _anchors = [generate_anchors(base_size=_feat_stride, scales=[anchor_scale]) for _feat_stride, anchor_scale in zip(_feat_strides, anchor_scales)]
+    _anchors = [[], [], [], []]
+    _anchors[0] = generate_anchors(base_size=_feat_strides[0], scales=np.array([anchor_scales[0]]))
+    _anchors[1] = generate_anchors(base_size=_feat_strides[1], scales=np.array([anchor_scales[1]]))
+    _anchors[2] = generate_anchors(base_size=_feat_strides[2], scales=np.array([anchor_scales[2]]))
+    _anchors[3] = generate_anchors(base_size=_feat_strides[3], scales=np.array([anchor_scales[3]]))
+
     _num_anchors = [anchor.shape[0] for anchor in _anchors]
 
     im_info = im_info[0]
 
-    assert rpn_cls_prob_reshape.shape[0] == 1, \
-        'Only single item batches are supported'
+    #assert rpn_cls_prob_reshape.shape[0] == 1, \
+    #    'Only single item batches are supported'
     # cfg_key = str(self.phase) # either 'TRAIN' or 'TEST'
     #cfg_key = 'TEST'
     pre_nms_topN  = cfg[cfg_key].RPN_PRE_NMS_TOP_N
@@ -82,11 +89,14 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
     # the first set of _num_anchors channels are bg probs
     # the second set are the fg probs, which we want
     # (4, 1, H, W, A(x))  --> (1, H, W, stack(A))
-    scores = [np.reshape(np.reshape(rpn_cls_prob_reshape, [1, height, width, num_anchors, 2])[:,:,:,:,1],
-                [1, height, width, _num_anchor])
+    scores = [np.reshape(np.reshape(rpn_cls_prob_reshape, [1, height, width, _num_anchor, 2])[:,:,:,:,1],
+                [-1, 1])
                 for height, width, rpn_cls_prob_reshape, _num_anchor in
                 zip(heights, widths, rpn_cls_prob_reshapes, _num_anchors)]
-    scores = np.concatenate(scores, axis=3)
+
+    # scores are (1 * H * W * A(x), 1) format
+    # reshape to (stack(1 * H * W * A(x)), 1) where rows are ordered by (h, w, a)
+    scores = np.concatenate(scores, axis=0)
 
     if DEBUG:
         print 'im_size: ({}, {})'.format(im_info[0], im_info[1])
@@ -135,12 +145,6 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
 
     bbox_deltas = [bbox_delta.reshape((-1, 4)) for bbox_delta in bbox_deltas]
     bbox_deltas = np.concatenate(bbox_deltas, axis=0)
-
-    # Same story for the scores:
-    #
-    # scores are (1, H, W, stack(A)) format
-    # reshape to (1 * H * W * stack(A), 1) where rows are ordered by (h, w, a)
-    scores = scores.reshape((-1, 1))
 
     # Convert anchors into proposals via bbox transformations
     proposals = bbox_transform_inv(anchors, bbox_deltas)
