@@ -344,7 +344,7 @@ class FPN_train(Network):
                    'rpn_cls_prob_reshape/P4', 'rpn_bbox_pred/P4',
                    'rpn_cls_prob_reshape/P5', 'rpn_bbox_pred/P5',
                    'im_info')
-                   .proposal_layer(_feat_stride[2:6], anchor_size[2:6], 'TRAIN',name = 'rpn_rois'))
+                   .proposal_layer(_feat_stride[2:6], anchor_size[2:6], 'TEST',name = 'rpn_rois'))
 
         #========= RCNN ============
         (self.feed('P2', 'P3', 'P4', 'P5', 'rpn-rois')
