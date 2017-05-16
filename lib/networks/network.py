@@ -363,12 +363,13 @@ class Network(object):
             input[0] = input[0][0]
         with tf.variable_scope(name) as scope:
             #inputs: 'rpn_rois','gt_boxes', 'gt_ishard', 'dontcare_areas'
-            rois_P2,rois_P3,rois_P4,rois_P5,labels,bbox_targets,bbox_inside_weights,bbox_outside_weights \
+            rois_P2,rois_P3,rois_P4,rois_P5,labels,bbox_targets,bbox_inside_weights,bbox_outside_weights,rois \
                 = tf.py_func(proposal_target_layer_py,
                              [input[0],input[1],input[2],input[3],classes],
-                             [tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32])
+                             [tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32])
             # rois_Px <- (1 x H x W x A(x), 5) e.g. [0, x1, y1, x2, y2]
             # rois = tf.convert_to_tensor(rois, name='rois')
+            rois = tf.reshape(rois, [-1, 5], name='rois') # goes to roi_pooling
             rois_P2 = tf.reshape(rois_P2, [-1, 5], name='rois_P2') # goes to roi_pooling
             rois_P3 = tf.reshape(rois_P3, [-1, 5], name='rois_P3') # goes to roi_pooling
             rois_P4 = tf.reshape(rois_P4, [-1, 5], name='rois_P4') # goes to roi_pooling
@@ -378,9 +379,9 @@ class Network(object):
             bbox_inside_weights = tf.convert_to_tensor(bbox_inside_weights, name = 'bbox_inside_weights')
             bbox_outside_weights = tf.convert_to_tensor(bbox_outside_weights, name = 'bbox_outside_weights')
 
-            #self.layers['rois'] = rois
+            self.layers['rois'] = rois
 
-            return rois_P2, rois_P3, rois_P4, rois_P5, labels, bbox_targets, bbox_inside_weights, bbox_outside_weights
+            return rois_P2, rois_P3, rois_P4, rois_P5, labels, bbox_targets, bbox_inside_weights, bbox_outside_weights, rois
 
 
     @layer
