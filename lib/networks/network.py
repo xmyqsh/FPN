@@ -8,7 +8,6 @@ from ..rpn_msr.anchor_target_layer_tf import anchor_target_layer as anchor_targe
 from ..rpn_msr.proposal_target_layer_tf import proposal_target_layer as proposal_target_layer_py
 # FCN pooling
 from ..psroi_pooling_layer import psroi_pooling_op as psroi_pooling_op
-#from ..fpn_roi_pooling_layer import fpn_roi_pooling_op as fpn_roi_pool_op
 
 
 DEFAULT_PADDING = 'SAME'
@@ -243,6 +242,7 @@ class Network(object):
 
     @layer
     def fpn_roi_pool(self, input, pooled_height, pooled_width, name):
+        # fake op, just parallel roi_pool and concat them
         # only use the first input
         if isinstance(input[0], tuple): # P2
             input[0] = input[0][0]
@@ -261,14 +261,31 @@ class Network(object):
             input[4] = input[4][0]
         '''
 
+
         print input
-        return fpn_roi_pool_op.fpn_roi_pool(input[0], input[1],
-                                            input[2], input[3],
-                                            input[4][0], input[4][1],
-                                            input[4][2], input[4][3],
-                                            pooled_height,
-                                            pooled_width,
-                                            name=name)[0]
+        with tf.variable_scope(name) as scope:
+            roi_pool_P2 = roi_pool_op.roi_pool(input[0], input[4][0],
+                                    pooled_height,
+                                    pooled_width,
+                                    1.0 / 4.0,
+                                    name='roi_pool_P2')[0]
+            roi_pool_P3 = roi_pool_op.roi_pool(input[1], input[4][1],
+                                    pooled_height,
+                                    pooled_width,
+                                    1.0 / 8.0,
+                                    name='roi_pool_P3')[0]
+            roi_pool_P4 = roi_pool_op.roi_pool(input[2], input[4][2],
+                                    pooled_height,
+                                    pooled_width,
+                                    1.0 / 16.0,
+                                    name='roi_pool_P4')[0]
+            roi_pool_P5 = roi_pool_op.roi_pool(input[3], input[4][3],
+                                    pooled_height,
+                                    pooled_width,
+                                    1.0 / 32.0,
+                                    name='roi_pool_P5')[0]
+
+            return tf.concat(axis=0, values=[roi_pool_P2, roi_pool_P3, roi_pool_P4, roi_pool_P5], name='roi_pool_concat')
 
     @layer
     def psroi_pool(self, input, output_dim, group_size, spatial_scale, name):
