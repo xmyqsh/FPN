@@ -1,11 +1,8 @@
 #!/bin/bash
-# Usage:
-# ./experiments/scripts/faster_rcnn_end2end.sh GPU NET DATASET [options args to {train,test}_net.py]
-# DATASET is either pascal_voc or coco.
 #
 # Example:
-# ./experiments/scripts/FPN_end2end.sh 0 Resnet50 pascal_voc0712 \
-#   --set EXP_DIR foobar RNG_SEED 42 TRAIN.SCALES "[800]"
+# ./experiments/scripts/FPN_end2end.sh 1 FPN pascal_voc0712 \
+#   --set RNG_SEED 42 TRAIN.SCALES "[800]"
 
 set -x
 set -e
@@ -24,8 +21,6 @@ EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 case $DATASET in
   pascal_voc0712)
-    #TRAIN_IMDB="voc_2007_trainval"
-    #TEST_IMDB="voc_2007_test"
     TRAIN_IMDB="voc_0712_trainval"
     TEST_IMDB="voc_0712_test"
     PT_DIR="pascal_voc"
@@ -33,10 +28,8 @@ case $DATASET in
     CFG="experiments/cfgs/FPN_end2end.yml"
     ;;
   pascal_voc2007)
-    #TRAIN_IMDB="voc_2007_trainval"
-    #TEST_IMDB="voc_2007_test"
-    TRAIN_IMDB="voc_0712_trainval"
-    TEST_IMDB="voc_0712_test"
+    TRAIN_IMDB="voc_2007_trainval"
+    TEST_IMDB="voc_2007_test"
     PT_DIR="pascal_voc"
     ITERS=200000
     CFG="experiments/cfgs/FPN_end2end.yml"
