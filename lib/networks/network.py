@@ -3,9 +3,9 @@ import tensorflow as tf
 
 from ..fast_rcnn.config import cfg
 from ..roi_pooling_layer import roi_pooling_op as roi_pool_op
-from ..rpn_msr.proposal_layer_tf import proposal_layer as proposal_layer_py
-from ..rpn_msr.anchor_target_layer_tf import anchor_target_layer as anchor_target_layer_py
-from ..rpn_msr.proposal_target_layer_tf import proposal_target_layer as proposal_target_layer_py
+from ..rpn_msr.proposal_layer import proposal_layer as proposal_layer_py
+from ..rpn_msr.anchor_target_layer import anchor_target_layer as anchor_target_layer_py
+from ..rpn_msr.proposal_target_layer import proposal_target_layer as proposal_target_layer_py
 
 
 DEFAULT_PADDING = 'SAME'
