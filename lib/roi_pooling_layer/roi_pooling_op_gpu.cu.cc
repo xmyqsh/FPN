@@ -13,6 +13,9 @@
 using std::max;
 using std::min;
 
+using std::cout;
+using std::endl;
+
 // namespace tensorflow {
 using namespace tensorflow;
 
@@ -94,7 +97,7 @@ bool ROIPoolForwardLaucher(
   const int output_size = num_rois * pooled_height * pooled_width * channels;
   cudaError_t err;
 
-  ROIPoolForward<<<(output_size + kThreadsPerBlock - 1) / kThreadsPerBlock,
+  ROIPoolForward<<<max(1, (output_size + kThreadsPerBlock - 1) / kThreadsPerBlock),
                        kThreadsPerBlock, 0, d.stream()>>>(
       output_size, bottom_data, spatial_scale, height, width, channels, pooled_height,
       pooled_width, bottom_rois, top_data, argmax_data);
@@ -102,7 +105,7 @@ bool ROIPoolForwardLaucher(
   err = cudaGetLastError();
   if(cudaSuccess != err)
   {
-    fprintf( stderr, "cudaCheckError() failed : %s\n", cudaGetErrorString( err ) );
+    fprintf( stderr, "cudaCheckError() failed in ROIPoolForward: %s\n", cudaGetErrorString( err ) );
     exit( -1 );
   }
 
@@ -199,7 +202,7 @@ bool ROIPoolBackwardLaucher(const float* top_diff, const float spatial_scale, co
   const int output_size = batch_size * height * width * channels;
   cudaError_t err;
 
-  ROIPoolBackward<<<(output_size + kThreadsPerBlock - 1) / kThreadsPerBlock,
+  ROIPoolBackward<<<max(1, (output_size + kThreadsPerBlock - 1) / kThreadsPerBlock),
                        kThreadsPerBlock, 0, d.stream()>>>(
       output_size, top_diff, argmax_data, num_rois, spatial_scale, height, width, channels, pooled_height,
       pooled_width, bottom_diff, bottom_rois);
@@ -207,7 +210,7 @@ bool ROIPoolBackwardLaucher(const float* top_diff, const float spatial_scale, co
   err = cudaGetLastError();
   if(cudaSuccess != err)
   {
-    fprintf( stderr, "cudaCheckError() failed : %s\n", cudaGetErrorString( err ) );
+    fprintf( stderr, "cudaCheckError() failed in ROIPoolBackward: %s\n", cudaGetErrorString( err ) );
     exit( -1 );
   }
 
