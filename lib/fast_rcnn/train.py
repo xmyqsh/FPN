@@ -282,9 +282,6 @@ class SolverWrapper(object):
                 if cfg.TRAIN.BBOX_REG and cfg.TRAIN.BBOX_NORMALIZE_TARGETS:
                     bbox_pred = bbox_pred * np.tile(self.bbox_stds, (bbox_pred.shape[0], 1)) + \
                                 np.tile(self.bbox_means, (bbox_pred.shape[0], 1))
-                print "cls_prob: ", cls_prob.shape
-                print "bbox_pred: ", bbox_pred.shape
-                print "rois: ", rois.shape
                 boxes, scores = _process_boxes_scores(cls_prob, bbox_pred, rois, blobs['im_info'][0][2], ori_im.shape)
                 res = nms_wrapper(scores, boxes, threshold=0.7)
                 image = cv2.cvtColor(_draw_boxes_to_image(ori_im, res), cv2.COLOR_BGR2RGB)
