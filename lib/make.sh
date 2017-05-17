@@ -7,7 +7,7 @@ CUDA_PATH=/usr/local/cuda/
 cd roi_pooling_layer
 
 nvcc -std=c++11 -c -o roi_pooling_op.cu.o roi_pooling_op_gpu.cu.cc \
-	-I $TF_INC -D GOOGLE_CUDA=1 -x cu -Xcompiler -fPIC -arch=sm_52
+	-I $TF_INC -D GOOGLE_CUDA=1 -x cu -Xcompiler -fPIC -arch=sm_61
 
 ## if you install tf using already-built binary, or gcc version 4.x, uncomment the two lines below
 #g++ -std=c++11 -shared -D_GLIBCXX_USE_CXX11_ABI=0 -o roi_pooling.so roi_pooling_op.cc \
