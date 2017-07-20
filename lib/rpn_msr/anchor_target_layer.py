@@ -65,11 +65,14 @@ def anchor_target_layer(rpn_cls_score, gt_boxes, gt_ishard, dontcare_areas, im_i
         _count = 0
 
     # allow boxes to sit over the edge by a small amount
-    _allowed_border =  0
+    #_allowed_border =  0
     # map of shape (..., H, W)
     #height, width = rpn_cls_score.shape[1:3]
 
     im_info = im_info[0]
+
+    _allowed_border_w = max(anchor_size * 1 - im_info[1], 0)
+    _allowed_border_h = max(anchor_size * 1 - im_info[0], 0)
 
     # Algorithm:
     #
@@ -114,10 +117,10 @@ def anchor_target_layer(rpn_cls_score, gt_boxes, gt_ishard, dontcare_areas, im_i
 
     # only keep anchors inside the image
     inds_inside = np.where(
-        (all_anchors[:, 0] >= -_allowed_border) &
-        (all_anchors[:, 1] >= -_allowed_border) &
-        (all_anchors[:, 2] < im_info[1] + _allowed_border) &  # width
-        (all_anchors[:, 3] < im_info[0] + _allowed_border)    # height
+        (all_anchors[:, 0] >= -_allowed_border_w) &
+        (all_anchors[:, 1] >= -_allowed_border_h) &
+        (all_anchors[:, 2] < im_info[1] + _allowed_border_w) &  # width
+        (all_anchors[:, 3] < im_info[0] + _allowed_border_h)    # height
     )[0]
 
     if DEBUG:
