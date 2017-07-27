@@ -148,13 +148,18 @@ class SolverWrapper(object):
             opt = tf.train.MomentumOptimizer(lr, momentum)
 
         global_step = tf.Variable(0, trainable=False)
-        with_clip = True
+        with_clip = False
         if with_clip:
+            # TODO: not support name_scope filter currently
             tvars = tf.trainable_variables()
             grads, norm = tf.clip_by_global_norm(tf.gradients(loss, tvars), 10.0)
             train_op = opt.apply_gradients(zip(grads, tvars), global_step=global_step)
         else:
-            train_op = opt.minimize(loss, global_step=global_step)
+            trainable_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'res3_5')
+            trainable_vars += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'Top-Down')
+            trainable_vars += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'RPN')
+            trainable_vars += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'Fast-RCNN')
+            train_op = opt.minimize(loss, global_step=global_step, var_list=trainable_vars)
 
         # intialize variables
         sess.run(tf.global_variables_initializer())

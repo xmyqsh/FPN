@@ -56,6 +56,7 @@ class Network(object):
             with tf.variable_scope(key, reuse=True):
                 for subkey in data_dict[key]:
                     try:
+                        #TODO: add a map from subkey to scope/subkey
                         var = tf.get_variable(subkey)
                         session.run(var.assign(data_dict[key][subkey]))
                         print "assign pretrain model "+subkey+ " to "+key
