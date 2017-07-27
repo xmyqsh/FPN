@@ -190,10 +190,10 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
         level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
 
         leveled_rois = [[], [], [], []]
-        leveled_rois[0] = [roi for roi in rois if level(roi) == 2]
-        leveled_rois[1] = [roi for roi in rois if level(roi) == 3]
-        leveled_rois[2] = [roi for roi in rois if level(roi) == 4]
-        leveled_rois[3] = [roi for roi in rois if level(roi) == 5]
+        leveled_rois[0] = [roi for roi in rpn_rois if level(roi) == 2]
+        leveled_rois[1] = [roi for roi in rpn_rois if level(roi) == 3]
+        leveled_rois[2] = [roi for roi in rpn_rois if level(roi) == 4]
+        leveled_rois[3] = [roi for roi in rpn_rois if level(roi) == 5]
 
         leveled_rois[0] = np.array(leveled_rois[0]).astype(np.float32)
         leveled_rois[1] = np.array(leveled_rois[1]).astype(np.float32)

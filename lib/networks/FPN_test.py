@@ -227,12 +227,16 @@ class FPN_test(Network):
         (self.feed('res5b_relu',
         	       'bn5c_branch2c')
              .add(name='res5c')
-             .relu(name='res5c_relu')
+             .relu(name='res5c_relu'))
+        '''
              .fc(n_classes, relu=False, name='cls_score')
              .softmax(name='cls_prob'))
+        '''
 
+        '''
         (self.feed('res5c_relu')
              .fc(n_classes*4, relu=False, name='bbox_pred'))
+        '''
 
         # Top-Down
         (self.feed('res5c_relu') # C5
@@ -241,7 +245,7 @@ class FPN_test(Network):
         (self.feed('res4f_relu') # C4
              .conv(1, 1, 256, 1, 1, biased=True, relu=False, name='C4_lateral'))
 
-        upshape_C4 = tf.shape(self.feed('C4'))
+#        upshape_C4 = tf.shape(self.feed('C4'))
 
         (self.feed('P5',
                    'C4_lateral')
@@ -259,7 +263,7 @@ class FPN_test(Network):
                    'C3_lateral')
              .upbilinear(name='C4_topdown'))
 
-        (self.feed('C4_topdown'
+        (self.feed('C4_topdown',
                    'C3_lateral')
              .add(name='P3_pre')
              .conv(3, 3, 256, 1, 1, biased=True, relu= False, name='P3'))
@@ -271,7 +275,7 @@ class FPN_test(Network):
                    'C2_lateral')
              .upbilinear(name='C3_topdown'))
 
-        (self.feed('C3_topdown'
+        (self.feed('C3_topdown',
                    'C2_lateral')
              .add(name='P2_pre')
              .conv(3, 3, 256, 1, 1, biased=True, relu= False, name='P2'))
@@ -347,7 +351,7 @@ class FPN_test(Network):
                    .proposal_layer(_feat_stride[2:6], anchor_size[2:6], 'TEST',name = 'rpn_rois'))
 
         #========= RCNN ============
-        (self.feed('P2', 'P3', 'P4', 'P5', 'rpn-rois')
+        (self.feed('P2', 'P3', 'P4', 'P5', 'rpn_rois')
              .fpn_roi_pool(7, 7, name='fpn_roi_pooling')
              .fc(1024, name='fc6')
              .fc(1024, name='fc7')
