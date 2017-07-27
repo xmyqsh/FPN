@@ -116,12 +116,15 @@ def anchor_target_layer(rpn_cls_score, gt_boxes, gt_ishard, dontcare_areas, im_i
     total_anchors = int(K * A)
 
     # only keep anchors inside the image
+    '''
     inds_inside = np.where(
         (all_anchors[:, 0] >= -_allowed_border_w) &
         (all_anchors[:, 1] >= -_allowed_border_h) &
         (all_anchors[:, 2] < im_info[1] + _allowed_border_w) &  # width
         (all_anchors[:, 3] < im_info[0] + _allowed_border_h)    # height
     )[0]
+    '''
+    inds_inside = [ind for ind in xrange(total_anchors)]
 
     if DEBUG:
         print 'total_anchors', total_anchors
