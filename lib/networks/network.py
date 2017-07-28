@@ -52,19 +52,75 @@ class Network(object):
 
     def load(self, data_path, session, ignore_missing=False):
         data_dict = np.load(data_path).item()
+        # scope: res1_2
         for key in data_dict:
-            with tf.variable_scope(key, reuse=True):
-                for subkey in data_dict[key]:
-                    try:
-                        #TODO: add a map from subkey to scope/subkey
-                        var = tf.get_variable(subkey)
-                        session.run(var.assign(data_dict[key][subkey]))
-                        print "assign pretrain model "+subkey+ " to "+key
-                    except ValueError:
-                        print "ignore "+key
-                        if not ignore_missing:
+            with tf.variable_scope('res1_2', reuse=True):
+                with tf.variable_scope(key):
+                    for subkey in data_dict[key]:
+                        try:
+                            var = tf.get_variable(subkey)
+                            session.run(var.assign(data_dict[key][subkey]))
+                            print "assign pretrain model "+subkey+ " to "+key
+                        except ValueError:
+                            print "ignore "+key + " " + subkey
+                            if not ignore_missing:
+                                raise
 
-                            raise
+        # scope: res3_5
+        for key in data_dict:
+            with tf.variable_scope('res3_5', reuse=True):
+                with tf.variable_scope(key):
+                    for subkey in data_dict[key]:
+                        try:
+                            var = tf.get_variable(subkey)
+                            session.run(var.assign(data_dict[key][subkey]))
+                            print "assign pretrain model "+subkey+ " to "+key
+                        except ValueError:
+                            print "ignore "+key + " " + subkey
+                            if not ignore_missing:
+                                raise
+
+        # scope: Top-Down
+        for key in data_dict:
+            with tf.variable_scope('Top-Down', reuse=True):
+                with tf.variable_scope(key):
+                    for subkey in data_dict[key]:
+                        try:
+                            var = tf.get_variable(subkey)
+                            session.run(var.assign(data_dict[key][subkey]))
+                            print "assign pretrain model "+subkey+ " to "+key
+                        except ValueError:
+                            print "ignore "+key + " " + subkey
+                            if not ignore_missing:
+                                raise
+
+        # scope: RPN
+        for key in data_dict:
+            with tf.variable_scope('RPN', reuse=True):
+                with tf.variable_scope(key):
+                    for subkey in data_dict[key]:
+                        try:
+                            var = tf.get_variable(subkey)
+                            session.run(var.assign(data_dict[key][subkey]))
+                            print "assign pretrain model "+subkey+ " to "+key
+                        except ValueError:
+                            print "ignore "+key + " " + subkey
+                            if not ignore_missing:
+                                raise
+
+        # scope: Fast-RCNN
+        for key in data_dict:
+            with tf.variable_scope('Fast-RCNN', reuse=True):
+                with tf.variable_scope(key):
+                    for subkey in data_dict[key]:
+                        try:
+                            var = tf.get_variable(subkey)
+                            session.run(var.assign(data_dict[key][subkey]))
+                            print "assign pretrain model "+subkey+ " to "+key
+                        except ValueError:
+                            print "ignore "+key + " " + subkey
+                            if not ignore_missing:
+                                raise
 
     def feed(self, *args):
         assert len(args)!=0
