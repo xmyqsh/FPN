@@ -109,10 +109,6 @@ class SolverWrapper(object):
         data_layer = get_data_layer(self.roidb, self.imdb.num_classes)
 
         loss, cross_entropy, loss_box, rpn_cross_entropy, rpn_loss_box, \
-                                       rpn_cross_entropy_P2, rpn_loss_box_P2, \
-                                       rpn_cross_entropy_P3, rpn_loss_box_P3, \
-                                       rpn_cross_entropy_P4, rpn_loss_box_P4, \
-                                       rpn_cross_entropy_P5, rpn_loss_box_P5 \
                                        = self.net.build_loss()
 
         # scalar summary
@@ -120,14 +116,6 @@ class SolverWrapper(object):
         tf.summary.scalar('rgs_loss', loss_box)
         tf.summary.scalar('rpn_cls_loss', rpn_cross_entropy)
         tf.summary.scalar('rpn_rgs_loss', rpn_loss_box)
-        tf.summary.scalar('rpn_cls_loss_P2', rpn_cross_entropy_P2)
-        tf.summary.scalar('rpn_rgs_loss_P2', rpn_loss_box_P2)
-        tf.summary.scalar('rpn_cls_loss_P3', rpn_cross_entropy_P3)
-        tf.summary.scalar('rpn_rgs_loss_P3', rpn_loss_box_P3)
-        tf.summary.scalar('rpn_cls_loss_P4', rpn_cross_entropy_P4)
-        tf.summary.scalar('rpn_rgs_loss_P4', rpn_loss_box_P4)
-        tf.summary.scalar('rpn_cls_loss_P5', rpn_cross_entropy_P5)
-        tf.summary.scalar('rpn_rgs_loss_P5', rpn_loss_box_P5)
         tf.summary.scalar('loss', loss)
         summary_op = tf.summary.merge_all()
 
