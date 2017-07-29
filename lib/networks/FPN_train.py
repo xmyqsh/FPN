@@ -277,20 +277,20 @@ class FPN_train(Network):
                  .conv(3, 3, 256, 1, 1, biased=True, relu= False, name='P2'))
 
 
-        with tf.variable_scope('RPN'):
+        with tf.variable_scope('RPN') as scope:
             #========= RPN ============
             # TODO: the head of 3*3 conv and two sibling 1*1 convs in each pyramid could share weights,
             #       add a shared weights version for comparison
             # P2
             (self.feed('P2')
-                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P2')
-                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P2'))
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P2',reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P2', reuse=True))
+
+            (self.feed('rpn_conv/3x3/P2')
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P2', reuse=True))
 
             (self.feed('rpn_cls_score/P2', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
                  .anchor_target_layer(_feat_stride[2], anchor_size[2], name = 'rpn-data/P2'))
-
-            (self.feed('rpn_conv/3x3/P2')
-                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P2'))
 
             (self.feed('rpn_cls_score/P2')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P2')
@@ -299,16 +299,18 @@ class FPN_train(Network):
             (self.feed('rpn_cls_prob/P2')
                  .spatial_reshape_layer(num_anchor_ratio*2, name = 'rpn_cls_prob_reshape/P2'))
 
+            scope.reuse_variables()
+
             # P3
             (self.feed('P3')
-                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P3')
-                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P3'))
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P3', reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P3', reuse=True))
+
+            (self.feed('rpn_conv/3x3/P3')
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P3', reuse=True))
 
             (self.feed('rpn_cls_score/P3', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
                  .anchor_target_layer(_feat_stride[3], anchor_size[3], name = 'rpn-data/P3'))
-
-            (self.feed('rpn_conv/3x3/P3')
-                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P3'))
 
             (self.feed('rpn_cls_score/P3')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P3')
@@ -319,14 +321,14 @@ class FPN_train(Network):
 
             # P4
             (self.feed('P4')
-                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P4')
-                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P4'))
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P4',reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P4', reuse=True))
+
+            (self.feed('rpn_conv/3x3/P4')
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P4', reuse=True))
 
             (self.feed('rpn_cls_score/P4', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
                  .anchor_target_layer(_feat_stride[4], anchor_size[4], name = 'rpn-data/P4'))
-
-            (self.feed('rpn_conv/3x3/P4')
-                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P4'))
 
             (self.feed('rpn_cls_score/P4')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P4')
@@ -337,14 +339,14 @@ class FPN_train(Network):
 
             # P5
             (self.feed('P5')
-                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P5')
-                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P5'))
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P5', reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P5', reuse=True))
+
+            (self.feed('rpn_conv/3x3/P5')
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P5', reuse=True))
 
             (self.feed('rpn_cls_score/P5', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
                  .anchor_target_layer(_feat_stride[5], anchor_size[5], name = 'rpn-data/P5'))
-
-            (self.feed('rpn_conv/3x3/P5')
-                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P5'))
 
             (self.feed('rpn_cls_score/P5')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P5')
@@ -352,6 +354,18 @@ class FPN_train(Network):
 
             (self.feed('rpn_cls_prob/P5')
                  .spatial_reshape_layer(num_anchor_ratio*2, name = 'rpn_cls_prob_reshape/P5'))
+
+
+
+            '''
+            (self.feed('rpn_cls_score/P2',
+                       'rpn_cls_score/P3',
+                       'rpn_cls_score/P4',
+                       'rpn_cls_score/P5',
+                       'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
+                    .anchor_target_layer(_feat_stride[2:6], anchor_size[2:6], name = 'rpn-data'))
+            '''
+
 
             #========= RoI Proposal ============
             (self.feed('rpn_cls_prob_reshape/P2', 'rpn_bbox_pred/P2',
