@@ -58,9 +58,10 @@ class SolverWrapper(object):
 
         if cfg.TRAIN.BBOX_REG and net.layers.has_key('bbox_pred') and cfg.TRAIN.BBOX_NORMALIZE_TARGETS:
             # save original values
-            with tf.variable_scope('bbox_pred', reuse=True):
-                weights = tf.get_variable("weights")
-                biases = tf.get_variable("biases")
+            with tf.variable_scope('Fast-RCNN', reuse=True):
+                with tf.variable_scope('bbox_pred'):
+                    weights = tf.get_variable("weights")
+                    biases = tf.get_variable("biases")
 
             orig_0 = weights.eval()
             orig_1 = biases.eval()
