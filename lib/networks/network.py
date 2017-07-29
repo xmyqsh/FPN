@@ -340,13 +340,34 @@ class Network(object):
                                                          input[8], cfg_key, _feat_strides, anchor_sizes],\
                                                          [tf.float32, tf.float32, tf.float32, tf.float32]);
 
-            rpn_rois_P2 = tf.reshape(rpn_rois_P2, [-1, 5], name = 'rpn_rois_P2') # shape is (1 x H x W x A(x), 5)
-            rpn_rois_P3 = tf.reshape(rpn_rois_P3, [-1, 5], name = 'rpn_rois_P3') # shape is (1 x H x W x A(x), 5)
-            rpn_rois_P4 = tf.reshape(rpn_rois_P4, [-1, 5], name = 'rpn_rois_P4') # shape is (1 x H x W x A(x), 5)
-            rpn_rois_P5 = tf.reshape(rpn_rois_P5, [-1, 5], name = 'rpn_rois_P5') # shape is (1 x H x W x A(x), 5)
+            rpn_rois_P2 = tf.reshape(rpn_rois_P2, [-1, 5], name = 'rpn_rois_P2') # shape is (1 x H(P) x W(P) x A(P), 5)
+            rpn_rois_P3 = tf.reshape(rpn_rois_P3, [-1, 5], name = 'rpn_rois_P3') # shape is (1 x H(P) x W(P) x A(P), 5)
+            rpn_rois_P4 = tf.reshape(rpn_rois_P4, [-1, 5], name = 'rpn_rois_P4') # shape is (1 x H(P) x W(P) x A(P), 5)
+            rpn_rois_P5 = tf.reshape(rpn_rois_P5, [-1, 5], name = 'rpn_rois_P5') # shape is (1 x H(P) x W(P) x A(P), 5)
 
             return rpn_rois_P2, rpn_rois_P3, rpn_rois_P4, rpn_rois_P5
 
+    @layer
+    def anchor_target_layer(self, input, _feat_strides, anchor_sizes, name):
+        if isinstance(input[0], tuple):
+            input[0] = input[0][0]
+
+        with tf.variable_scope(name) as scope:
+            # 'rpn_cls_score', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info'
+            rpn_labels,rpn_bbox_targets,rpn_bbox_inside_weights,rpn_bbox_outside_weights = \
+                tf.py_func(anchor_target_layer_py,
+                           [input[0],input[1],input[2],input[3],input[4],input[5],input[6],input[7], _feat_strides, anchor_sizes],
+                           [tf.float32,tf.float32,tf.float32,tf.float32])
+
+            rpn_labels = tf.convert_to_tensor(tf.cast(rpn_labels,tf.int32), name = 'rpn_labels') # shape is (1 x H x W x A, 2)
+            rpn_bbox_targets = tf.convert_to_tensor(rpn_bbox_targets, name = 'rpn_bbox_targets') # shape is (1 x H x W x A, 4)
+            rpn_bbox_inside_weights = tf.convert_to_tensor(rpn_bbox_inside_weights , name = 'rpn_bbox_inside_weights') # shape is (1 x H x W x A, 4)
+            rpn_bbox_outside_weights = tf.convert_to_tensor(rpn_bbox_outside_weights , name = 'rpn_bbox_outside_weights') # shape is (1 x H x W x A, 4)
+
+
+            return rpn_labels, rpn_bbox_targets, rpn_bbox_inside_weights, rpn_bbox_outside_weights
+
+    '''
     @layer
     def anchor_target_layer(self, input, _feat_stride, anchor_size, name):
         if isinstance(input[0], tuple):
@@ -366,7 +387,7 @@ class Network(object):
 
 
             return rpn_labels, rpn_bbox_targets, rpn_bbox_inside_weights, rpn_bbox_outside_weights
-
+    '''
 
     @layer
     def proposal_target_layer(self, input, classes, name):
@@ -395,6 +416,7 @@ class Network(object):
             return rois_P2, rois_P3, rois_P4, rois_P5, labels, bbox_targets, bbox_inside_weights, bbox_outside_weights, rois
 
 
+    '''
     @layer
     def reshape_layer(self, input, d, name):
         input_shape = tf.shape(input)
@@ -418,6 +440,11 @@ class Network(object):
                                             input_shape[2]
                                         ]),
                                  [0,2,3,1],name=name)
+    '''
+
+    @layer
+    def reshape_layer(self, input, output_shape, name):
+        return tf.reshape(input, output_shape, name=name)
 
     @layer
     def spatial_reshape_layer(self, input, d, name):

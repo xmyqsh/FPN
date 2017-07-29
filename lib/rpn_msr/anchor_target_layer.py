@@ -21,109 +21,110 @@ from ..fast_rcnn.bbox_transform import bbox_transform
 
 DEBUG = False
 
-def anchor_target_layer(rpn_cls_score, gt_boxes, gt_ishard, dontcare_areas, im_info, _feat_stride, anchor_size):
+def anchor_target_layer(rpn_cls_score_P2, \
+                        rpn_cls_score_P3, \
+                        rpn_cls_score_P4, \
+                        rpn_cls_score_P5, \
+                        gt_boxes, gt_ishard, dontcare_areas, im_info, \
+                        _feat_strides = [4, 8, 16, 32], \
+                        anchor_sizes = [32, 64, 128, 256]): # anchor_scales = [8, 8, 8, 8]
     """
     Assign anchors to ground-truth targets. Produces anchor classification
     labels and bounding-box regression targets.
     Parameters
     ----------
-    rpn_cls_score: (1, H, W, Ax2) bg/fg scores of previous conv layer
+    rpn_cls_score_P: (1, H(P), W(P), A(P)x2) bg/fg scores of previous conv layer
     gt_boxes: (G, 5) vstack of [x1, y1, x2, y2, class]
     gt_ishard: (G, 1), 1 or 0 indicates difficult or not
     dontcare_areas: (D, 4), some areas may contains small objs but no labelling. D may be 0
     im_info: a list of [image_height, image_width, scale_ratios]
-    _feat_stride: the downsampling ratio of feature map to the original input image
-    anchor_scale: the scale to the basic_anchor (basic anchor is [_feat_stride, _feat_stride])
-    anchor_size: the absolute anchor size on pyramid layer
+    _feat_strides: the downsampling ratio of feature map to the original input image on each pyramid layer
+    anchor_sizes: the absolute anchor sizes on each pyramid layer
     ----------
     Returns
     ----------
-    rpn_labels : (HxWxA, 1), for each anchor, 0 denotes bg, 1 fg, -1 dontcare
-    rpn_bbox_targets: (HxWxA, 4), distances of the anchors to the gt_boxes(may contains some transform)
+    rpn_labels : (sum(HxWxA), 1), for each anchor, 0 denotes bg, 1 fg, -1 dontcare
+    rpn_bbox_targets: (sum(HxWxA), 4), distances of the anchors to the gt_boxes(may contains some transform)
                             that are the regression objectives
-    rpn_bbox_inside_weights: (HxWxA, 4) weights of each boxes, mainly accepts hyper param in cfg
-    rpn_bbox_outside_weights: (HxWxA, 4) used to balance the fg/bg,
+    rpn_bbox_inside_weights: (sum(HxWxA), 4) weights of each boxes, mainly accepts hyper param in cfg
+    rpn_bbox_outside_weights: (sum(HxWxA), 4) used to balance the fg/bg,
                             beacuse the numbers of bgs and fgs mays significiantly different
     """
+
+    '''
     anchor_scale = anchor_size / _feat_stride
     _anchors = generate_anchors(base_size=_feat_stride, scales=np.array([anchor_scale]))
     _num_anchors = _anchors.shape[0]
+    '''
 
-    if DEBUG:
-        print 'anchors:'
-        print _anchors
-        print 'anchor shapes:'
-        print np.hstack((
-            _anchors[:, 2::4] - _anchors[:, 0::4],
-            _anchors[:, 3::4] - _anchors[:, 1::4],
-        ))
-        _counts = cfg.EPS
-        _sums = np.zeros((1, 4))
-        _squared_sums = np.zeros((1, 4))
-        _fg_sum = 0
-        _bg_sum = 0
-        _count = 0
+    anchor_scales = np.array(anchor_sizes) / np.array(_feat_strides)
 
-    # allow boxes to sit over the edge by a small amount
-    #_allowed_border =  0
-    # map of shape (..., H, W)
-    #height, width = rpn_cls_score.shape[1:3]
+    _anchors = [[], [], [], []]
+    _anchors[0] = generate_anchors(base_size=_feat_strides[0], scales=np.array([anchor_scales[0]]))
+    _anchors[1] = generate_anchors(base_size=_feat_strides[1], scales=np.array([anchor_scales[1]]))
+    _anchors[2] = generate_anchors(base_size=_feat_strides[2], scales=np.array([anchor_scales[2]]))
+    _anchors[3] = generate_anchors(base_size=_feat_strides[3], scales=np.array([anchor_scales[3]]))
+
+    _num_anchors = [anchor.shape[0] for anchor in _anchors]
 
     im_info = im_info[0]
-
-    _allowed_border_w = max(anchor_size * 1 - im_info[1], 0)
-    _allowed_border_h = max(anchor_size * 1 - im_info[0], 0)
 
     # Algorithm:
     #
     # for each (H, W) location i
-    #   generate 9 anchor boxes centered on cell i
-    #   apply predicted bbox deltas at cell i to each of the 9 anchors
-    # filter out-of-image anchors
+    #   generate 3 anchor boxes centered on cell i
+    #   apply predicted bbox deltas at cell i to each of the 3 anchors
     # measure GT overlap
 
-    assert rpn_cls_score.shape[0] == 1, \
-        'Only single item batches are supported'
+    all_anchors_list = []
+    total_anchors_sum = 0
 
-    # map of shape (..., H, W)
-    height, width = rpn_cls_score.shape[1:3]
+    for idx, rpn_cls_score in enumerate([rpn_cls_score_P2, rpn_cls_score_P3, rpn_cls_score_P4, rpn_cls_score_P5]):
 
-    if DEBUG:
-        print 'AnchorTargetLayer: height', height, 'width', width
-        print ''
-        print 'im_size: ({}, {})'.format(im_info[0], im_info[1])
-        print 'scale: {}'.format(im_info[2])
-        print 'height, width: ({}, {})'.format(height, width)
-        print 'rpn: gt_boxes.shape', gt_boxes.shape
-        print 'rpn: gt_boxes', gt_boxes
+        assert rpn_cls_score.shape[0] == 1, \
+            'Only single item batches are supported'
 
-    # 1. Generate proposals from bbox deltas and shifted anchors
-    shift_x = np.arange(0, width) * _feat_stride
-    shift_y = np.arange(0, height) * _feat_stride
-    shift_x, shift_y = np.meshgrid(shift_x, shift_y) # in W H order
-    # K is H x W
-    shifts = np.vstack((shift_x.ravel(), shift_y.ravel(),
-                        shift_x.ravel(), shift_y.ravel())).transpose()
-    # add A anchors (1, A, 4) to
-    # cell K shifts (K, 1, 4) to get
-    # shift anchors (K, A, 4)
-    # reshape to (K*A, 4) shifted anchors
-    A = _num_anchors
-    K = shifts.shape[0]
-    all_anchors = (_anchors.reshape((1, A, 4)) +
-                   shifts.reshape((1, K, 4)).transpose((1, 0, 2)))
-    all_anchors = all_anchors.reshape((K * A, 4))
-    total_anchors = int(K * A)
+        # map of shape (..., H, W)
+        height, width = rpn_cls_score.shape[1:3]
+
+        if DEBUG:
+            print 'AnchorTargetLayer: height', height, 'width', width
+            print ''
+            print 'im_size: ({}, {})'.format(im_info[0], im_info[1])
+            print 'scale: {}'.format(im_info[2])
+            print 'height, width: ({}, {})'.format(height, width)
+            print 'rpn: gt_boxes.shape', gt_boxes.shape
+            print 'rpn: gt_boxes', gt_boxes
+
+        # 1. Generate proposals from bbox deltas and shifted anchors
+        shift_x = np.arange(0, width) * _feat_strides[idx]
+        shift_y = np.arange(0, height) * _feat_strides[idx]
+        shift_x, shift_y = np.meshgrid(shift_x, shift_y) # in W H order
+        # K is H x W
+        shifts = np.vstack((shift_x.ravel(), shift_y.ravel(),
+                            shift_x.ravel(), shift_y.ravel())).transpose()
+        # add A anchors (1, A, 4) to
+        # cell K shifts (K, 1, 4) to get
+        # shift anchors (K, A, 4)
+        # reshape to (K*A, 4) shifted anchors
+        A = _num_anchors[idx]
+        K = shifts.shape[0]
+        all_anchors = (_anchors[idx].reshape((1, A, 4)) +
+                       shifts.reshape((1, K, 4)).transpose((1, 0, 2)))
+        all_anchors = all_anchors.reshape((K * A, 4))
+        total_anchors = int(K * A)
+
+        all_anchors_list.append(all_anchors)
+        total_anchors_sum += total_anchors
+
+    all_anchors = np.concatenate(all_anchors_list, axis=0)
+    total_anchors = total_anchors_sum
+    assert total_anchors == all_anchors.shape[0], \
+            'total_anchors should equal to all_anchors.shape()[0], but not'
+
+    #------------------------------------------------------------------------------------------
 
     # only keep anchors inside the image
-    '''
-    inds_inside = np.where(
-        (all_anchors[:, 0] >= -_allowed_border_w) &
-        (all_anchors[:, 1] >= -_allowed_border_h) &
-        (all_anchors[:, 2] < im_info[1] + _allowed_border_w) &  # width
-        (all_anchors[:, 3] < im_info[0] + _allowed_border_h)    # height
-    )[0]
-    '''
     inds_inside = [ind for ind in xrange(total_anchors)]
 
     if DEBUG:
@@ -208,6 +209,8 @@ def anchor_target_layer(rpn_cls_score, gt_boxes, gt_ishard, dontcare_areas, im_i
         #print "was %s inds, disabling %s, now %s inds" % (
             #len(bg_inds), len(disable_inds), np.sum(labels == 0))
 
+#    print "fg: {:d}, bg: {:d}, disabled: {:d}".format(np.sum(labels == 1), np.sum(labels == 0), np.sum(labels == -1))
+
     bbox_targets = np.zeros((len(inds_inside), 4), dtype=np.float32)
     bbox_targets = _compute_targets(anchors, gt_boxes[argmax_overlaps, :])
 
@@ -259,30 +262,9 @@ def anchor_target_layer(rpn_cls_score, gt_boxes, gt_ishard, dontcare_areas, im_i
         print 'rpn: num_positive avg', _fg_sum / _count
         print 'rpn: num_negative avg', _bg_sum / _count
 
-    # labels
-    #pdb.set_trace()
-    labels = labels.reshape((1, height, width, A))
     rpn_labels = labels
-
-    # bbox_targets
-    bbox_targets = bbox_targets \
-        .reshape((1, height, width, A * 4))
-
     rpn_bbox_targets = bbox_targets
-    # bbox_inside_weights
-    bbox_inside_weights = bbox_inside_weights \
-        .reshape((1, height, width, A * 4))
-    #assert bbox_inside_weights.shape[2] == height
-    #assert bbox_inside_weights.shape[3] == width
-
     rpn_bbox_inside_weights = bbox_inside_weights
-
-    # bbox_outside_weights
-    bbox_outside_weights = bbox_outside_weights \
-        .reshape((1, height, width, A * 4))
-    #assert bbox_outside_weights.shape[2] == height
-    #assert bbox_outside_weights.shape[3] == width
-
     rpn_bbox_outside_weights = bbox_outside_weights
 
     return rpn_labels, rpn_bbox_targets, rpn_bbox_inside_weights, rpn_bbox_outside_weights
