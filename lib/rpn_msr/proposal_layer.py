@@ -32,8 +32,8 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
     """
     Parameters
     ----------
-    rpn_cls_prob_reshape_Px: (1 , H , W , A(x)*2) outputs of RPN, prob of bg or fg on pyramid layer x
-    rpn_bbox_pred_Px: (1 , H , W , A(x)*4), rgs boxes output of RPN on pyramid layer x
+    rpn_cls_prob_reshape_P: (1 , H(P), W(P), A(P)x2) outputs of RPN, prob of bg or fg on pyramid layer P
+    rpn_bbox_pred_P: (1 , H(P), W(P), A(P)x4), rgs boxes output of RPN on pyramid layer P
     im_info: a list of [image_height, image_width, scale_ratios]
     cfg_key: 'TRAIN' or 'TEST'
     _feat_strides: the downsampling ratio of feature map to the original input image on each pyramid layer
@@ -41,7 +41,7 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
     ----------
     Returns
     ----------
-    rpn_rois : (1 x H x W x stack(A), 5) e.g. [0, x1, y1, x2, y2]
+    rpn_rois : (sum(H x W x A), 5) e.g. [0, x1, y1, x2, y2]
 
     # Algorithm:
     #
@@ -94,8 +94,8 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
                 for height, width, rpn_cls_prob_reshape, _num_anchor in
                 zip(heights, widths, rpn_cls_prob_reshapes, _num_anchors)]
 
-    # scores are (1 * H * W * A(x), 1) format
-    # reshape to (stack(1 * H * W * A(x)), 1) where rows are ordered by (h, w, a)
+    # scores are (1 * H(P) * W(P) * A(P), 1) format
+    # reshape to (sum(1 * H * W * A), 1) where rows are ordered by (h, w, a)
     scores = np.concatenate(scores, axis=0)
 
     if DEBUG:
