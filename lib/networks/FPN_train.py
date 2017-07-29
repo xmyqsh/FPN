@@ -289,9 +289,6 @@ class FPN_train(Network):
             (self.feed('rpn_conv/3x3/P2')
                  .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P2', reuse=True))
 
-            (self.feed('rpn_cls_score/P2', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
-                 .anchor_target_layer(_feat_stride[2], anchor_size[2], name = 'rpn-data/P2'))
-
             (self.feed('rpn_cls_score/P2')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P2')
                  .spatial_softmax(name='rpn_cls_prob/P2'))
@@ -309,9 +306,6 @@ class FPN_train(Network):
             (self.feed('rpn_conv/3x3/P3')
                  .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P3', reuse=True))
 
-            (self.feed('rpn_cls_score/P3', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
-                 .anchor_target_layer(_feat_stride[3], anchor_size[3], name = 'rpn-data/P3'))
-
             (self.feed('rpn_cls_score/P3')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P3')
                  .spatial_softmax(name='rpn_cls_prob/P3'))
@@ -326,9 +320,6 @@ class FPN_train(Network):
 
             (self.feed('rpn_conv/3x3/P4')
                  .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P4', reuse=True))
-
-            (self.feed('rpn_cls_score/P4', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
-                 .anchor_target_layer(_feat_stride[4], anchor_size[4], name = 'rpn-data/P4'))
 
             (self.feed('rpn_cls_score/P4')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P4')
@@ -345,9 +336,6 @@ class FPN_train(Network):
             (self.feed('rpn_conv/3x3/P5')
                  .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P5', reuse=True))
 
-            (self.feed('rpn_cls_score/P5', 'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
-                 .anchor_target_layer(_feat_stride[5], anchor_size[5], name = 'rpn-data/P5'))
-
             (self.feed('rpn_cls_score/P5')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P5')
                  .spatial_softmax(name='rpn_cls_prob/P5'))
@@ -357,15 +345,50 @@ class FPN_train(Network):
 
 
 
-            '''
+            (self.feed('rpn_cls_score_reshape/P2')
+                 .reshape_layer([-1, 2], name = 'rpn_cls_score_reshape_reshape/P2'))
+
+            (self.feed('rpn_cls_score_reshape/P3')
+                 .reshape_layer([-1, 2], name = 'rpn_cls_score_reshape_reshape/P3'))
+
+            (self.feed('rpn_cls_score_reshape/P4')
+                 .reshape_layer([-1, 2], name = 'rpn_cls_score_reshape_reshape/P4'))
+
+            (self.feed('rpn_cls_score_reshape/P5')
+                 .reshape_layer([-1, 2], name = 'rpn_cls_score_reshape_reshape/P5'))
+
+            (self.feed('rpn_cls_score_reshape_reshape/P2',
+                       'rpn_cls_score_reshape_reshape/P3',
+                       'rpn_cls_score_reshape_reshape/P4',
+                       'rpn_cls_score_reshape_reshape/P5')
+                 .concat(0, name = 'rpn_cls_score_reshape_reshape_concat'))
+
+
+            (self.feed('rpn_bbox_pred/P2')
+                 .reshape_layer([-1, 4], name = 'rpn_bbox_pred_reshape/P2'))
+
+            (self.feed('rpn_bbox_pred/P3')
+                 .reshape_layer([-1, 4], name = 'rpn_bbox_pred_reshape/P3'))
+
+            (self.feed('rpn_bbox_pred/P4')
+                 .reshape_layer([-1, 4], name = 'rpn_bbox_pred_reshape/P4'))
+
+            (self.feed('rpn_bbox_pred/P5')
+                 .reshape_layer([-1, 4], name = 'rpn_bbox_pred_reshape/P5'))
+
+            (self.feed('rpn_bbox_pred_reshape/P2',
+                       'rpn_bbox_pred_reshape/P3',
+                       'rpn_bbox_pred_reshape/P4',
+                       'rpn_bbox_pred_reshape/P5')
+                 .concat(0, name = 'rpn_bbox_pred_reshape_concat'))
+
+
             (self.feed('rpn_cls_score/P2',
                        'rpn_cls_score/P3',
                        'rpn_cls_score/P4',
                        'rpn_cls_score/P5',
                        'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
                     .anchor_target_layer(_feat_stride[2:6], anchor_size[2:6], name = 'rpn-data'))
-            '''
-
 
             #========= RoI Proposal ============
             (self.feed('rpn_cls_prob_reshape/P2', 'rpn_bbox_pred/P2',
@@ -392,50 +415,32 @@ class FPN_train(Network):
 
 
     def build_loss(self):
-        # TODO:
         ############# RPN
-        def RPN_loss(P):
-            # classification loss
-            rpn_cls_score = tf.reshape(self.get_output('rpn_cls_score_reshape/' + P), [-1, 2])  # shape (HxWxA, 2)
-            rpn_label = tf.reshape(self.get_output('rpn-data/' + P)[0], [-1])  # shape (HxWxA)
-            # ignore_label(-1)
-            fg_keep = tf.equal(rpn_label, 1)
-            rpn_keep = tf.where(tf.not_equal(rpn_label, -1))
-            rpn_cls_score = tf.reshape(tf.gather(rpn_cls_score, rpn_keep), [-1, 2]) # shape (N, 2)
-            rpn_label = tf.reshape(tf.gather(rpn_label, rpn_keep), [-1])
-            rpn_cross_entropy_n = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=rpn_cls_score, labels=rpn_label)
-            rpn_cross_entropy = tf.reduce_mean(rpn_cross_entropy_n)
+        rpn_cls_score = self.get_output('rpn_cls_score_reshape_reshape_concat') # shape(sum(HxWxA), 2)
+        rpn_bbox_pred = self.get_output('rpn_bbox_pred_reshape_concat') # shape (sum(HxWxA), 4)
 
-            # box loss
-            rpn_bbox_pred = self.get_output('rpn_bbox_pred/' + P) # shape (1, H, W, Ax4)
-            rpn_bbox_targets = self.get_output('rpn-data/' + P)[1]
-            rpn_bbox_inside_weights = self.get_output('rpn-data/' + P)[2]
-            rpn_bbox_outside_weights = self.get_output('rpn-data/' + P)[3]
-            rpn_bbox_pred = tf.reshape(tf.gather(tf.reshape(rpn_bbox_pred, [-1, 4]), rpn_keep), [-1, 4]) # shape (N, 4)
-            rpn_bbox_targets = tf.reshape(tf.gather(tf.reshape(rpn_bbox_targets, [-1, 4]), rpn_keep), [-1, 4])
-            rpn_bbox_inside_weights = tf.reshape(tf.gather(tf.reshape(rpn_bbox_inside_weights, [-1, 4]), rpn_keep), [-1, 4])
-            rpn_bbox_outside_weights = tf.reshape(tf.gather(tf.reshape(rpn_bbox_outside_weights, [-1, 4]), rpn_keep), [-1, 4])
+        rpn_label = tf.reshape(self.get_output('rpn-data')[0], [-1])  # shape (HxWxA)
+        rpn_bbox_targets = self.get_output('rpn-data')[1]
+        rpn_bbox_inside_weights = self.get_output('rpn-data')[2]
+        rpn_bbox_outside_weights = self.get_output('rpn-data')[3]
 
-            rpn_loss_box_n = tf.reduce_sum(self.smooth_l1_dist(
-                rpn_bbox_inside_weights * (rpn_bbox_pred - rpn_bbox_targets)), axis=[1])
-            rpn_loss_box = tf.reduce_sum(rpn_loss_box_n) / (tf.reduce_sum(tf.cast(fg_keep, tf.float32)) + 1.0)
+        fg_keep = tf.equal(rpn_label, 1)
+        rpn_keep = tf.where(tf.not_equal(rpn_label, -1))
 
-            return rpn_cross_entropy, rpn_loss_box
+        rpn_cls_score = tf.reshape(tf.gather(rpn_cls_score, rpn_keep), [-1, 2]) # shape (N, 2)
+        rpn_bbox_pred = tf.reshape(tf.gather(rpn_bbox_pred, rpn_keep), [-1, 4]) # shape (N, 4)
 
-        rpn_cross_entropy_P2, rpn_loss_box_P2 = RPN_loss('P2');
-        rpn_cross_entropy_P3, rpn_loss_box_P3 = RPN_loss('P3');
-        rpn_cross_entropy_P4, rpn_loss_box_P4 = RPN_loss('P4');
-        rpn_cross_entropy_P5, rpn_loss_box_P5 = RPN_loss('P5');
+        rpn_label = tf.reshape(tf.gather(rpn_label, rpn_keep), [-1])
+        rpn_bbox_targets = tf.reshape(tf.gather(tf.reshape(rpn_bbox_targets, [-1, 4]), rpn_keep), [-1, 4])
+        rpn_bbox_inside_weights = tf.reshape(tf.gather(tf.reshape(rpn_bbox_inside_weights, [-1, 4]), rpn_keep), [-1, 4])
+        rpn_bbox_outside_weights = tf.reshape(tf.gather(tf.reshape(rpn_bbox_outside_weights, [-1, 4]), rpn_keep), [-1, 4])
 
-        rpn_cross_entropy = rpn_cross_entropy_P2 + \
-                            rpn_cross_entropy_P3 + \
-                            rpn_cross_entropy_P4 + \
-                            rpn_cross_entropy_P5
+        rpn_cross_entropy_n = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=rpn_cls_score, labels=rpn_label)
+        rpn_cross_entropy = tf.reduce_mean(rpn_cross_entropy_n)
 
-        rpn_loss_box = rpn_loss_box_P2 + \
-                       rpn_loss_box_P3 + \
-                       rpn_loss_box_P4 + \
-                       rpn_loss_box_P5
+        rpn_loss_box_n = tf.reduce_sum(self.smooth_l1_dist(
+            rpn_bbox_inside_weights * (rpn_bbox_pred - rpn_bbox_targets)), axis=[1])
+        rpn_loss_box = tf.reduce_sum(rpn_loss_box_n) / (tf.reduce_sum(tf.cast(fg_keep, tf.float32)) + 1.0)
 
         ############# R-CNN
         # classification loss
@@ -467,8 +472,4 @@ class FPN_train(Network):
             regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             loss = tf.add_n(regularization_losses) + loss
 
-        return loss, cross_entropy, loss_box, rpn_cross_entropy, rpn_loss_box, \
-                                              rpn_cross_entropy_P2, rpn_loss_box_P2, \
-                                              rpn_cross_entropy_P3, rpn_loss_box_P3, \
-                                              rpn_cross_entropy_P4, rpn_loss_box_P4, \
-                                              rpn_cross_entropy_P5, rpn_loss_box_P5
+        return loss, cross_entropy, loss_box, rpn_cross_entropy, rpn_loss_box
