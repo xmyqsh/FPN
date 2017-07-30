@@ -438,17 +438,9 @@ class FPN_train(Network):
         rpn_cross_entropy_n = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=rpn_cls_score, labels=rpn_label)
         rpn_cross_entropy = tf.reduce_mean(rpn_cross_entropy_n)
 
-        '''
         rpn_loss_box_n = tf.reduce_sum(self.smooth_l1_dist(
             rpn_bbox_inside_weights * (rpn_bbox_pred - rpn_bbox_targets)), axis=[1])
         rpn_loss_box = tf.reduce_sum(rpn_loss_box_n) / (tf.reduce_sum(tf.cast(fg_keep, tf.float32)) + 1.0)
-        '''
-
-        rpn_loss_box_n = tf.reduce_sum(rpn_bbox_outside_weights * self.smooth_l1_dist(
-            rpn_bbox_inside_weights * (rpn_bbox_pred - rpn_bbox_targets), sigma2=3.0), axis=[1])
-        #rpn_loss_box = tf.reduce_mean(rpn_loss_box_n)
-        rpn_loss_box = tf.reduce_sum(rpn_loss_box_n)
-
 
         ############# R-CNN
         # classification loss
@@ -464,14 +456,13 @@ class FPN_train(Network):
         bbox_outside_weights = self.get_output('roi-data')[7] # (R, (C+1)x4)
 
         loss_box_n = tf.reduce_sum( \
-            bbox_outside_weights * self.smooth_l1_dist(bbox_inside_weights * (bbox_pred - bbox_targets), sigma2=1.0), \
+            bbox_outside_weights * self.smooth_l1_dist(bbox_inside_weights * (bbox_pred - bbox_targets)), \
             axis=[1])
 
         loss_n = loss_box_n + cross_entropy_n
         loss_n = tf.reshape(loss_n, [-1])
 
-        #loss_box = tf.reduce_mean(loss_box_n)
-        loss_box = tf.reduce_sum(loss_box_n)
+        loss_box = tf.reduce_mean(loss_box_n)
         cross_entropy = tf.reduce_mean(cross_entropy_n)
 
         loss = cross_entropy + loss_box + rpn_cross_entropy + rpn_loss_box
