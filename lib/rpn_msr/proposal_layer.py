@@ -27,8 +27,9 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
                    rpn_cls_prob_reshape_P3, rpn_bbox_pred_P3, \
                    rpn_cls_prob_reshape_P4, rpn_bbox_pred_P4, \
                    rpn_cls_prob_reshape_P5, rpn_bbox_pred_P5, \
-                   im_info, cfg_key, _feat_strides = [4, 8, 16, 32], \
-                   anchor_sizes = [32, 64, 128, 256]): # anchor_scales = [8, 8, 8, 8]
+                   rpn_cls_prob_reshape_P6, rpn_bbox_pred_P6, \
+                   im_info, cfg_key, _feat_strides = [4, 8, 16, 32, 64], \
+                   anchor_sizes = [32, 64, 128, 256, 512]): # anchor_scales = [8, 8, 8, 8, 8]
     """
     Parameters
     ----------
@@ -61,11 +62,12 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
     anchor_scales = np.array(anchor_sizes) / np.array(_feat_strides)
 
     # _anchors = [generate_anchors(base_size=_feat_stride, scales=[anchor_scale]) for _feat_stride, anchor_scale in zip(_feat_strides, anchor_scales)]
-    _anchors = [[], [], [], []]
+    _anchors = [[], [], [], [], []]
     _anchors[0] = generate_anchors(base_size=_feat_strides[0], scales=np.array([anchor_scales[0]]))
     _anchors[1] = generate_anchors(base_size=_feat_strides[1], scales=np.array([anchor_scales[1]]))
     _anchors[2] = generate_anchors(base_size=_feat_strides[2], scales=np.array([anchor_scales[2]]))
     _anchors[3] = generate_anchors(base_size=_feat_strides[3], scales=np.array([anchor_scales[3]]))
+    _anchors[4] = generate_anchors(base_size=_feat_strides[4], scales=np.array([anchor_scales[4]]))
 
     _num_anchors = [anchor.shape[0] for anchor in _anchors]
 
@@ -80,8 +82,8 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
     nms_thresh    = cfg[cfg_key].RPN_NMS_THRESH
     min_size      = cfg[cfg_key].RPN_MIN_SIZE
 
-    rpn_cls_prob_reshapes = [rpn_cls_prob_reshape_P2, rpn_cls_prob_reshape_P3, rpn_cls_prob_reshape_P4, rpn_cls_prob_reshape_P5]
-    bbox_deltas = [rpn_bbox_pred_P2, rpn_bbox_pred_P3, rpn_bbox_pred_P4, rpn_bbox_pred_P5]
+    rpn_cls_prob_reshapes = [rpn_cls_prob_reshape_P2, rpn_cls_prob_reshape_P3, rpn_cls_prob_reshape_P4, rpn_cls_prob_reshape_P5, rpn_cls_prob_reshape_P6]
+    bbox_deltas = [rpn_bbox_pred_P2, rpn_bbox_pred_P3, rpn_bbox_pred_P4, rpn_bbox_pred_P5, rpn_bbox_pred_P6]
 
     heights = [rpn_cls_prob_reshape.shape[1] for rpn_cls_prob_reshape in rpn_cls_prob_reshapes]
     widths = [rpn_cls_prob_reshape.shape[2] for rpn_cls_prob_reshape in rpn_cls_prob_reshapes]

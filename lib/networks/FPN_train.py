@@ -28,7 +28,7 @@ class FPN_train(Network):
 
         n_classes = cfg.NCLASSES
         num_anchor_ratio = 3 # 1:2, 1:1, 2:1
-        anchor_size = [None, None, 32, 64, 128, 256, 512] # P6 is not implemented in this version
+        anchor_size = [None, None, 32, 64, 128, 256, 512] # P6 should be in RPN, but not Fast-RCNN, according to the paper
         _feat_stride = [None, 2, 4, 8, 16, 32, 64]
 
         with tf.variable_scope('res1_2'):
@@ -240,6 +240,9 @@ class FPN_train(Network):
             (self.feed('res5c_relu') # C5
                  .conv(1, 1, 256, 1, 1, biased=True, relu=False, name='P5'))
 
+            (self.feed('P5')
+                 .max_pool(2, 2, 2, 2, padding='VALID',name='P6'))
+
             (self.feed('res4f_relu') # C4
                  .conv(1, 1, 256, 1, 1, biased=True, relu=False, name='C4_lateral'))
 
@@ -343,6 +346,21 @@ class FPN_train(Network):
             (self.feed('rpn_cls_prob/P5')
                  .spatial_reshape_layer(num_anchor_ratio*2, name = 'rpn_cls_prob_reshape/P5'))
 
+            # P6
+            (self.feed('P6')
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P6', reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P6', reuse=True))
+
+            (self.feed('rpn_conv/3x3/P6')
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P6', reuse=True))
+
+            (self.feed('rpn_cls_score/P6')
+                 .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P6')
+                 .spatial_softmax(name='rpn_cls_prob/P6'))
+
+            (self.feed('rpn_cls_prob/P6')
+                 .spatial_reshape_layer(num_anchor_ratio*2, name = 'rpn_cls_prob_reshape/P6'))
+
 
 
             (self.feed('rpn_cls_score_reshape/P2')
@@ -357,10 +375,14 @@ class FPN_train(Network):
             (self.feed('rpn_cls_score_reshape/P5')
                  .reshape_layer([-1, 2], name = 'rpn_cls_score_reshape_reshape/P5'))
 
+            (self.feed('rpn_cls_score_reshape/P6')
+                 .reshape_layer([-1, 2], name = 'rpn_cls_score_reshape_reshape/P6'))
+
             (self.feed('rpn_cls_score_reshape_reshape/P2',
                        'rpn_cls_score_reshape_reshape/P3',
                        'rpn_cls_score_reshape_reshape/P4',
-                       'rpn_cls_score_reshape_reshape/P5')
+                       'rpn_cls_score_reshape_reshape/P5',
+                       'rpn_cls_score_reshape_reshape/P6')
                  .concat(0, name = 'rpn_cls_score_reshape_reshape_concat'))
 
 
@@ -376,10 +398,14 @@ class FPN_train(Network):
             (self.feed('rpn_bbox_pred/P5')
                  .reshape_layer([-1, 4], name = 'rpn_bbox_pred_reshape/P5'))
 
+            (self.feed('rpn_bbox_pred/P6')
+                 .reshape_layer([-1, 4], name = 'rpn_bbox_pred_reshape/P6'))
+
             (self.feed('rpn_bbox_pred_reshape/P2',
                        'rpn_bbox_pred_reshape/P3',
                        'rpn_bbox_pred_reshape/P4',
-                       'rpn_bbox_pred_reshape/P5')
+                       'rpn_bbox_pred_reshape/P5',
+                       'rpn_bbox_pred_reshape/P6')
                  .concat(0, name = 'rpn_bbox_pred_reshape_concat'))
 
 
@@ -387,16 +413,18 @@ class FPN_train(Network):
                        'rpn_cls_score/P3',
                        'rpn_cls_score/P4',
                        'rpn_cls_score/P5',
+                       'rpn_cls_score/P6',
                        'gt_boxes', 'gt_ishard', 'dontcare_areas', 'im_info')
-                    .anchor_target_layer(_feat_stride[2:6], anchor_size[2:6], name = 'rpn-data'))
+                 .anchor_target_layer(_feat_stride[2:], anchor_size[2:], name = 'rpn-data'))
 
             #========= RoI Proposal ============
             (self.feed('rpn_cls_prob_reshape/P2', 'rpn_bbox_pred/P2',
                        'rpn_cls_prob_reshape/P3', 'rpn_bbox_pred/P3',
                        'rpn_cls_prob_reshape/P4', 'rpn_bbox_pred/P4',
                        'rpn_cls_prob_reshape/P5', 'rpn_bbox_pred/P5',
+                       'rpn_cls_prob_reshape/P6', 'rpn_bbox_pred/P6',
                        'im_info')
-                       .proposal_layer(_feat_stride[2:6], anchor_size[2:6], 'TRAIN',name = 'rpn_rois'))
+                 .proposal_layer(_feat_stride[2:], anchor_size[2:], 'TRAIN',name = 'rpn_rois'))
 
             (self.feed('rpn_rois','gt_boxes', 'gt_ishard', 'dontcare_areas')
                  .proposal_target_layer(n_classes,name = 'roi-data'))

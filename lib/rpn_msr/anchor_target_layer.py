@@ -25,9 +25,10 @@ def anchor_target_layer(rpn_cls_score_P2, \
                         rpn_cls_score_P3, \
                         rpn_cls_score_P4, \
                         rpn_cls_score_P5, \
+                        rpn_cls_score_P6, \
                         gt_boxes, gt_ishard, dontcare_areas, im_info, \
-                        _feat_strides = [4, 8, 16, 32], \
-                        anchor_sizes = [32, 64, 128, 256]): # anchor_scales = [8, 8, 8, 8]
+                        _feat_strides = [4, 8, 16, 32, 64], \
+                        anchor_sizes = [32, 64, 128, 256, 512]): # anchor_scales = [8, 8, 8, 8, 8]
     """
     Assign anchors to ground-truth targets. Produces anchor classification
     labels and bounding-box regression targets.
@@ -59,11 +60,12 @@ def anchor_target_layer(rpn_cls_score_P2, \
 
     anchor_scales = np.array(anchor_sizes) / np.array(_feat_strides)
 
-    _anchors = [[], [], [], []]
+    _anchors = [[], [], [], [], []]
     _anchors[0] = generate_anchors(base_size=_feat_strides[0], scales=np.array([anchor_scales[0]]))
     _anchors[1] = generate_anchors(base_size=_feat_strides[1], scales=np.array([anchor_scales[1]]))
     _anchors[2] = generate_anchors(base_size=_feat_strides[2], scales=np.array([anchor_scales[2]]))
     _anchors[3] = generate_anchors(base_size=_feat_strides[3], scales=np.array([anchor_scales[3]]))
+    _anchors[4] = generate_anchors(base_size=_feat_strides[4], scales=np.array([anchor_scales[4]]))
 
     _num_anchors = [anchor.shape[0] for anchor in _anchors]
 
@@ -79,7 +81,7 @@ def anchor_target_layer(rpn_cls_score_P2, \
     all_anchors_list = []
     total_anchors_sum = 0
 
-    for idx, rpn_cls_score in enumerate([rpn_cls_score_P2, rpn_cls_score_P3, rpn_cls_score_P4, rpn_cls_score_P5]):
+    for idx, rpn_cls_score in enumerate([rpn_cls_score_P2, rpn_cls_score_P3, rpn_cls_score_P4, rpn_cls_score_P5, rpn_cls_score_P6]):
 
         assert rpn_cls_score.shape[0] == 1, \
             'Only single item batches are supported'
