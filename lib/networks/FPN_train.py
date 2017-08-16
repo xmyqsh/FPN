@@ -493,9 +493,6 @@ class FPN_train(Network):
         loss_box = tf.reduce_mean(loss_box_n)
         cross_entropy = tf.reduce_mean(cross_entropy_n)
 
-        loss_box = 0.1 * loss_box
-        cross_entropy = 0.1 * cross_entropy
-
         loss = cross_entropy + loss_box + rpn_cross_entropy + rpn_loss_box
 
         vs_name = ['res3_5', 'RPN', 'Top-Down', 'Fast-RCNN']
