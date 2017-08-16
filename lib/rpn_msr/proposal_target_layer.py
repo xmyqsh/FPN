@@ -90,6 +90,10 @@ def proposal_target_layer(rpn_rois, gt_boxes, gt_ishard, dontcare_areas, _num_cl
     #     print 'num bg avg: {}'.format(_bg_num / _count)
     #     print 'ratio: {:.3f}'.format(float(_fg_num) / float(_bg_num))
 
+    print 'num gt: {}'.format(gt_boxes.shape[0])
+    print 'num fg: {}'.format((labels > 0).sum())
+    print 'num bg: {}'.format((labels == 0).sum())
+
     rois = rois.reshape(-1, 5)
     labels = labels.reshape(-1, 1)
     bbox_targets = bbox_targets.reshape(-1, _num_classes*4)
@@ -103,18 +107,28 @@ def proposal_target_layer(rpn_rois, gt_boxes, gt_ishard, dontcare_areas, _num_cl
 
     level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
 
-    leveled_rois = [[], [], [], []]
-    leveled_rois[0] = [roi for roi in rois if level(roi) == 2]
-    leveled_rois[1] = [roi for roi in rois if level(roi) == 3]
-    leveled_rois[2] = [roi for roi in rois if level(roi) == 4]
-    leveled_rois[3] = [roi for roi in rois if level(roi) == 5]
+    leveled_rois = [None] * 4
+    leveled_labels = [None] * 4
+    leveled_bbox_targets = [None] * 4
+    leveled_bbox_inside_weights = [None] * 4
+    leveled_bbox_outside_weights = [None] * 4
+    leveled_idxs = [[]] * 4
+    for idx, roi in enumerate(rois):
+        level_idx = level(roi) - 2
+        leveled_idxs[level_idx].append(idx)
 
-    leveled_rois[0] = np.array(leveled_rois[0]).astype(np.float32)
-    leveled_rois[1] = np.array(leveled_rois[1]).astype(np.float32)
-    leveled_rois[2] = np.array(leveled_rois[2]).astype(np.float32)
-    leveled_rois[3] = np.array(leveled_rois[3]).astype(np.float32)
+    for level_idx in xrange(0, 4):
+        leveled_rois[level_idx] = rois[leveled_idxs[level_idx]]
+        leveled_labels[level_idx] = labels[leveled_idxs[level_idx]]
+        leveled_bbox_targets[level_idx] = bbox_targets[leveled_idxs[level_idx]]
+        leveled_bbox_inside_weights[level_idx] = bbox_inside_weights[leveled_idxs[level_idx]]
+        leveled_bbox_outside_weights[level_idx] = bbox_outside_weights[leveled_idxs[level_idx]]
 
-    #leveled_rois = np.array(leveled_rois)
+    rois = np.concatenate(leveled_rois, axis=0)
+    labels = np.concatenate(leveled_labels, axis=0)
+    bbox_targets = np.concatenate(leveled_bbox_targets, axis=0)
+    bbox_inside_weights = np.concatenate(leveled_bbox_inside_weights, axis=0)
+    bbox_outside_weights = np.concatenate(leveled_bbox_outside_weights, axis=0)
 
     return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3], \
             labels, bbox_targets, bbox_inside_weights, bbox_outside_weights, rois
