@@ -81,6 +81,41 @@ def get_minibatch(roidb, num_classes):
         # For debug visualizations
         # _vis_minibatch(im_blob, rois_blob, labels_blob, all_overlaps)
 
+        # assign rois to level Pk    (P2 ~ P5)
+        def calc_level(width, height):
+            return min(5, max(2, int(4 + np.log2(np.sqrt(width * height) / 224))))
+
+        level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
+
+        rois = rois_blob
+        labels = labels_blob
+        bbox_targets = bbox_targets_blob
+        bbox_inside_weights = bbox_inside_blob
+
+        leveled_rois = [None] * 4
+        leveled_labels = [None] * 4
+        leveled_bbox_targets = [None] * 4
+        leveled_bbox_inside_weights = [None] * 4
+        leveled_idxs = [[]] * 4
+        for idx, roi in enumerate(rois):
+            level_idx = level(roi) - 2
+            leveled_idxs[level_idx].append(idx)
+
+        for level_idx in xrange(0, 4):
+            leveled_rois[level_idx] = rois[leveled_idxs[level_idx]]
+            leveled_labels[level_idx] = labels[leveled_idxs[level_idx]]
+            leveled_bbox_targets[level_idx] = bbox_targets[leveled_idxs[level_idx]]
+            leveled_bbox_inside_weights[level_idx] = bbox_inside_weights[leveled_idxs[level_idx]]
+
+        rois_blob = np.concatenate(leveled_rois, axis=0)
+        labels_blob = np.concatenate(leveled_labels, axis=0)
+        bbox_targets_blob = np.concatenate(leveled_bbox_targets, axis=0)
+        bbox_inside_blob = np.concatenate(leveled_bbox_inside_weights, axis=0)
+
+        blobs['leveled_rois_0'] = leveled_rois[0]
+        blobs['leveled_rois_1'] = leveled_rois[1]
+        blobs['leveled_rois_2'] = leveled_rois[2]
+        blobs['leveled_rois_3'] = leveled_rois[3]
         blobs['rois'] = rois_blob
         blobs['labels'] = labels_blob
 
