@@ -256,7 +256,7 @@ __C.USE_GPU_NMS = True
 # Default GPU device id
 __C.GPU_ID = 0
 
-def get_output_dir(imdb, weights_filename):
+def get_output_dir(imdb, weights_filename=None):
     """Return the directory where experimental artifacts are placed.
     If the directory does not exist, it is created.
 
