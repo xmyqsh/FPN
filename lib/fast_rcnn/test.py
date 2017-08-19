@@ -169,13 +169,9 @@ def im_detect(sess, net, im, boxes=None):
         feed_dict={net.data: blobs['data'], net.rois: blobs['rois'], net.keep_prob: 1.0}
 
     cls_score, cls_prob, bbox_pred, rois = \
-        sess.run([net.get_output('cls_score'), net.get_output('cls_prob'), net.get_output('bbox_pred'),net.get_output('bbox_pred')],\
-                 feed_dict=feed_dict)
-    '''
         sess.run([net.get_output('cls_score'), net.get_output('cls_prob'), net.get_output('bbox_pred'),net.get_output('rois')],\
                  feed_dict=feed_dict)
-    '''
-    
+
     if cfg.TEST.HAS_RPN:
         assert len(im_scales) == 1, "Only single-image batch implemented"
         boxes = rois[:, 1:5] / im_scales[0]

@@ -191,18 +191,18 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
 
         level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
 
-        leveled_rois = [[], [], [], []]
-        leveled_rois[0] = [roi for roi in rpn_rois if level(roi) == 2]
-        leveled_rois[1] = [roi for roi in rpn_rois if level(roi) == 3]
-        leveled_rois[2] = [roi for roi in rpn_rois if level(roi) == 4]
-        leveled_rois[3] = [roi for roi in rpn_rois if level(roi) == 5]
+        leveled_rois = [None] * 4
+        leveled_idxs = [[]] * 4
+        for idx, roi in enumerate(rpn_rois):
+            level_idx = level(roi) - 2
+            leveled_idxs[level_idx].append(idx)
 
-        leveled_rois[0] = np.array(leveled_rois[0]).astype(np.float32)
-        leveled_rois[1] = np.array(leveled_rois[1]).astype(np.float32)
-        leveled_rois[2] = np.array(leveled_rois[2]).astype(np.float32)
-        leveled_rois[3] = np.array(leveled_rois[3]).astype(np.float32)
+        for level_idx in xrange(0, 4):
+            leveled_rois[level_idx] = rpn_rois[leveled_idxs[level_idx]]
 
-        return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3]
+        rpn_rois = np.concatenate(leveled_rois, axis=0)
+
+        return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3], rpn_rois
 
     return rpn_rois
     #top[0].reshape(*(blob.shape))
