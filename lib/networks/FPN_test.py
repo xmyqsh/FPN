@@ -28,7 +28,7 @@ class FPN_test(Network):
 
         n_classes = cfg.NCLASSES
         num_anchor_ratio = 3 # 1:2, 1:1, 2:1
-        anchor_size = [None, None, 32, 64, 128, 256, 512] # P6 is not implemented in this version
+        anchor_size = [None, None, 32, 64, 128, 256, 512] # P6 should be in RPN, but not Fast-RCNN, according to the paper
         _feat_stride = [None, 2, 4, 8, 16, 32, 64]
 
         with tf.variable_scope('res1_2'):
@@ -240,6 +240,9 @@ class FPN_test(Network):
             (self.feed('res5c_relu') # C5
                  .conv(1, 1, 256, 1, 1, biased=True, relu=False, name='P5'))
 
+            (self.feed('P5')
+                 .max_pool(2, 2, 2, 2, padding='VALID',name='P6'))
+
             (self.feed('res4f_relu') # C4
                  .conv(1, 1, 256, 1, 1, biased=True, relu=False, name='C4_lateral'))
 
@@ -277,15 +280,15 @@ class FPN_test(Network):
                  .conv(3, 3, 256, 1, 1, biased=True, relu= False, name='P2'))
 
 
-        with tf.variable_scope('RPN'):
+        with tf.variable_scope('RPN') as scope:
             #========= RPN ============
             # P2
             (self.feed('P2')
-                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P2')
-                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P2'))
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P2',reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P2', reuse=True))
 
             (self.feed('rpn_conv/3x3/P2')
-                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P2'))
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P2', reuse=True))
 
             (self.feed('rpn_cls_score/P2')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P2')
@@ -294,13 +297,15 @@ class FPN_test(Network):
             (self.feed('rpn_cls_prob/P2')
                  .spatial_reshape_layer(num_anchor_ratio*2, name = 'rpn_cls_prob_reshape/P2'))
 
+            scope.reuse_variables()
+
             # P3
             (self.feed('P3')
-                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P3')
-                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P3'))
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P3', reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P3', reuse=True))
 
             (self.feed('rpn_conv/3x3/P3')
-                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P3'))
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P3', reuse=True))
 
             (self.feed('rpn_cls_score/P3')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P3')
@@ -311,11 +316,11 @@ class FPN_test(Network):
 
             # P4
             (self.feed('P4')
-                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P4')
-                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P4'))
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P4',reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P4', reuse=True))
 
             (self.feed('rpn_conv/3x3/P4')
-                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P4'))
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P4', reuse=True))
 
             (self.feed('rpn_cls_score/P4')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P4')
@@ -326,11 +331,11 @@ class FPN_test(Network):
 
             # P5
             (self.feed('P5')
-                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P5')
-                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P5'))
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P5', reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P5', reuse=True))
 
             (self.feed('rpn_conv/3x3/P5')
-                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P5'))
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P5', reuse=True))
 
             (self.feed('rpn_cls_score/P5')
                  .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P5')
@@ -339,13 +344,29 @@ class FPN_test(Network):
             (self.feed('rpn_cls_prob/P5')
                  .spatial_reshape_layer(num_anchor_ratio*2, name = 'rpn_cls_prob_reshape/P5'))
 
+            # P6
+            (self.feed('P6')
+                 .conv(3,3,512,1,1,name='rpn_conv/3x3/P6', reuse=True)
+                 .conv(1,1,num_anchor_ratio*2 ,1 , 1, padding='VALID', relu = False, name='rpn_cls_score/P6', reuse=True))
+
+            (self.feed('rpn_conv/3x3/P6')
+                 .conv(1,1,num_anchor_ratio*4, 1, 1, padding='VALID', relu = False, name='rpn_bbox_pred/P6', reuse=True))
+
+            (self.feed('rpn_cls_score/P6')
+                 .spatial_reshape_layer(2, name = 'rpn_cls_score_reshape/P6')
+                 .spatial_softmax(name='rpn_cls_prob/P6'))
+
+            (self.feed('rpn_cls_prob/P6')
+                 .spatial_reshape_layer(num_anchor_ratio*2, name = 'rpn_cls_prob_reshape/P6'))
+
             #========= RoI Proposal ============
             (self.feed('rpn_cls_prob_reshape/P2', 'rpn_bbox_pred/P2',
                        'rpn_cls_prob_reshape/P3', 'rpn_bbox_pred/P3',
                        'rpn_cls_prob_reshape/P4', 'rpn_bbox_pred/P4',
                        'rpn_cls_prob_reshape/P5', 'rpn_bbox_pred/P5',
+                       'rpn_cls_prob_reshape/P6', 'rpn_bbox_pred/P6',
                        'im_info')
-                       .proposal_layer(_feat_stride[2:6], anchor_size[2:6], 'TEST',name = 'rpn_rois'))
+                 .proposal_layer(_feat_stride[2:], anchor_size[2:], 'TEST',name = 'rpn_rois'))
 
         with tf.variable_scope('Fast-RCNN'):
             #========= RCNN ============
