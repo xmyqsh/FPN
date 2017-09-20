@@ -90,9 +90,9 @@ def proposal_target_layer(rpn_rois, gt_boxes, gt_ishard, dontcare_areas, _num_cl
     #     print 'num bg avg: {}'.format(_bg_num / _count)
     #     print 'ratio: {:.3f}'.format(float(_fg_num) / float(_bg_num))
 
-    print 'num gt: {}'.format(gt_boxes.shape[0])
-    print 'num fg: {}'.format((labels > 0).sum())
-    print 'num bg: {}'.format((labels == 0).sum())
+    #print 'num gt: {}'.format(gt_boxes.shape[0])
+    #print 'num fg: {}'.format((labels > 0).sum())
+    #print 'num bg: {}'.format((labels == 0).sum())
 
     rois = rois.reshape(-1, 5)
     labels = labels.reshape(-1, 1)
@@ -112,7 +112,7 @@ def proposal_target_layer(rpn_rois, gt_boxes, gt_ishard, dontcare_areas, _num_cl
     leveled_bbox_targets = [None] * 4
     leveled_bbox_inside_weights = [None] * 4
     leveled_bbox_outside_weights = [None] * 4
-    leveled_idxs = [[]] * 4
+    leveled_idxs = [[], [], [], []]
     for idx, roi in enumerate(rois):
         level_idx = level(roi) - 2
         leveled_idxs[level_idx].append(idx)

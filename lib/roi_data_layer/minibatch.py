@@ -96,7 +96,7 @@ def get_minibatch(roidb, num_classes):
         leveled_labels = [None] * 4
         leveled_bbox_targets = [None] * 4
         leveled_bbox_inside_weights = [None] * 4
-        leveled_idxs = [[]] * 4
+        leveled_idxs = [[], [], [], []]
         for idx, roi in enumerate(rois):
             level_idx = level(roi) - 2
             leveled_idxs[level_idx].append(idx)

@@ -192,7 +192,7 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
         level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
 
         leveled_rois = [None] * 4
-        leveled_idxs = [[]] * 4
+        leveled_idxs = [[], [], [], []]
         for idx, roi in enumerate(rpn_rois):
             level_idx = level(roi) - 2
             leveled_idxs[level_idx].append(idx)
