@@ -92,16 +92,16 @@ def get_minibatch(roidb, num_classes):
         bbox_targets = bbox_targets_blob
         bbox_inside_weights = bbox_inside_blob
 
-        leveled_rois = [None] * 4
-        leveled_labels = [None] * 4
-        leveled_bbox_targets = [None] * 4
-        leveled_bbox_inside_weights = [None] * 4
-        leveled_idxs = [[], [], [], []]
+        leveled_rois = [None] * 5
+        leveled_labels = [None] * 5
+        leveled_bbox_targets = [None] * 5
+        leveled_bbox_inside_weights = [None] * 5
+        leveled_idxs = [[], [], [], [], []]
         for idx, roi in enumerate(rois):
             level_idx = level(roi) - 2
             leveled_idxs[level_idx].append(idx)
 
-        for level_idx in xrange(0, 4):
+        for level_idx in xrange(0, 5):
             leveled_rois[level_idx] = rois[leveled_idxs[level_idx]]
             leveled_labels[level_idx] = labels[leveled_idxs[level_idx]]
             leveled_bbox_targets[level_idx] = bbox_targets[leveled_idxs[level_idx]]
@@ -116,6 +116,7 @@ def get_minibatch(roidb, num_classes):
         blobs['leveled_rois_1'] = leveled_rois[1]
         blobs['leveled_rois_2'] = leveled_rois[2]
         blobs['leveled_rois_3'] = leveled_rois[3]
+        blobs['leveled_rois_4'] = leveled_rois[4]
         blobs['rois'] = rois_blob
         blobs['labels'] = labels_blob
 

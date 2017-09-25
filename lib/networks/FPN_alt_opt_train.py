@@ -26,13 +26,14 @@ class FPN_alt_opt_train(Network):
         self.leveled_rois_1 = tf.placeholder(tf.float32, shape=[None, 5], name='leveled_rois_1')
         self.leveled_rois_2 = tf.placeholder(tf.float32, shape=[None, 5], name='leveled_rois_2')
         self.leveled_rois_3 = tf.placeholder(tf.float32, shape=[None, 5], name='leveled_rois_3')
+        self.leveled_rois_4 = tf.placeholder(tf.float32, shape=[None, 5], name='leveled_rois_4')
         self.rois = tf.placeholder(tf.float32, shape=[None, 5], name='rois')
         #self.labels = tf.placeholder(tf.int32, shape=[None, 1], name='labels')
         self.labels = tf.placeholder(tf.int32, shape=[None], name='labels')
         self.bbox_targets = tf.placeholder(tf.float32, shape=[None, self.n_classes * 4], name='bbox_targets')
         self.bbox_inside_weights = tf.placeholder(tf.float32, shape=[None, self.n_classes * 4], name='bbox_inside_weights')
         self.bbox_outside_weights = tf.placeholder(tf.float32, shape=[None, self.n_classes * 4], name='bbox_outside_weights')
-        self.roi_data = [self.leveled_rois_0, self.leveled_rois_1, self.leveled_rois_2, self.leveled_rois_3,
+        self.roi_data = [self.leveled_rois_0, self.leveled_rois_1, self.leveled_rois_2, self.leveled_rois_3, self.leveled_rois_4, \
                          self.labels, self.bbox_targets, self.bbox_inside_weights, self.bbox_outside_weights, self.rois]
         self.layers = dict({'data':self.data, 'im_info':self.im_info, 'gt_boxes':self.gt_boxes,\
                             'gt_ishard': self.gt_ishard, 'dontcare_areas': self.dontcare_areas,\
@@ -449,7 +450,7 @@ class FPN_alt_opt_train(Network):
 
         with tf.variable_scope('Fast-RCNN'):
             #========= RCNN ============
-            (self.feed('P2', 'P3', 'P4', 'P5', 'roi-data')
+            (self.feed('P2', 'P3', 'P4', 'P5', 'P6', 'roi-data')
                  .fpn_roi_pool(7, 7, name='fpn_roi_pooling')
                  .fc(1024, name='fc6')
                  .fc(1024, name='fc7')
@@ -508,15 +509,15 @@ class FPN_alt_opt_train(Network):
         ############# R-CNN
         # classification loss
         cls_score = self.get_output('cls_score') # (R, C+1)
-        label = tf.reshape(self.get_output('roi-data')[4], [-1]) # (R)
+        label = tf.reshape(self.get_output('roi-data')[5], [-1]) # (R)
         cross_entropy_n = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=cls_score, labels=label)
 
         # bounding box regression L1 loss
         bbox_pred = self.get_output('bbox_pred') # (R, (C+1)x4)
-        bbox_targets = self.get_output('roi-data')[5] # (R, (C+1)x4)
+        bbox_targets = self.get_output('roi-data')[6] # (R, (C+1)x4)
         # each element is {0, 1}, represents background (0), objects (1)
-        bbox_inside_weights = self.get_output('roi-data')[6] # (R, (C+1)x4)
-        bbox_outside_weights = self.get_output('roi-data')[7] # (R, (C+1)x4)
+        bbox_inside_weights = self.get_output('roi-data')[7] # (R, (C+1)x4)
+        bbox_outside_weights = self.get_output('roi-data')[8] # (R, (C+1)x4)
 
         loss_box_n = tf.reduce_sum( \
             bbox_outside_weights * self.smooth_l1_dist(bbox_inside_weights * (bbox_pred - bbox_targets)), \
