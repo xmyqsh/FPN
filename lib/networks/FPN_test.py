@@ -370,7 +370,7 @@ class FPN_test(Network):
 
         with tf.variable_scope('Fast-RCNN'):
             #========= RCNN ============
-            (self.feed('P2', 'P3', 'P4', 'P5', 'rpn_rois')
+            (self.feed('P2', 'P3', 'P4', 'P5', 'P6', 'rpn_rois')
                  .fpn_roi_pool(7, 7, name='fpn_roi_pooling')
                  .fc(1024, name='fc6')
                  .fc(1024, name='fc7')

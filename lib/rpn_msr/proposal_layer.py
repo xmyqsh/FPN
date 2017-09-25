@@ -191,18 +191,18 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
 
         level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
 
-        leveled_rois = [None] * 4
-        leveled_idxs = [[], [], [], []]
+        leveled_rois = [None] * 5
+        leveled_idxs = [[], [], [], [], []]
         for idx, roi in enumerate(rpn_rois):
             level_idx = level(roi) - 2
             leveled_idxs[level_idx].append(idx)
 
-        for level_idx in xrange(0, 4):
+        for level_idx in xrange(0, 5):
             leveled_rois[level_idx] = rpn_rois[leveled_idxs[level_idx]]
 
         rpn_rois = np.concatenate(leveled_rois, axis=0)
 
-        return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3], rpn_rois
+        return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3], leveled_rois[4], rpn_rois
 
     return rpn_rois
     #top[0].reshape(*(blob.shape))

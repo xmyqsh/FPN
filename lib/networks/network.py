@@ -282,6 +282,9 @@ class Network(object):
         if isinstance(input[3], tuple): # P5
             input[3] = input[3][0]
 
+        if isinstance(input[4], tuple): # P6
+            input[4] = input[4][0]
+
         '''
         if isinstance(input[4], tuple): # roi-data
             input[4] = input[4][0]
@@ -290,28 +293,33 @@ class Network(object):
 
         print input
         with tf.variable_scope(name) as scope:
-            roi_pool_P2 = roi_pool_op.roi_pool(input[0], input[4][0],
+            roi_pool_P2 = roi_pool_op.roi_pool(input[0], input[5][0],
                                     pooled_height,
                                     pooled_width,
                                     1.0 / 4.0,
                                     name='roi_pool_P2')[0]
-            roi_pool_P3 = roi_pool_op.roi_pool(input[1], input[4][1],
+            roi_pool_P3 = roi_pool_op.roi_pool(input[1], input[5][1],
                                     pooled_height,
                                     pooled_width,
                                     1.0 / 8.0,
                                     name='roi_pool_P3')[0]
-            roi_pool_P4 = roi_pool_op.roi_pool(input[2], input[4][2],
+            roi_pool_P4 = roi_pool_op.roi_pool(input[2], input[5][2],
                                     pooled_height,
                                     pooled_width,
                                     1.0 / 16.0,
                                     name='roi_pool_P4')[0]
-            roi_pool_P5 = roi_pool_op.roi_pool(input[3], input[4][3],
+            roi_pool_P5 = roi_pool_op.roi_pool(input[3], input[5][3],
                                     pooled_height,
                                     pooled_width,
                                     1.0 / 32.0,
                                     name='roi_pool_P5')[0]
+            roi_pool_P6 = roi_pool_op.roi_pool(input[4], input[5][4],
+                                    pooled_height,
+                                    pooled_width,
+                                    1.0 / 64.0,
+                                    name='roi_pool_P6')[0]
 
-            return tf.concat(axis=0, values=[roi_pool_P2, roi_pool_P3, roi_pool_P4, roi_pool_P5], name='roi_pool_concat')
+            return tf.concat(axis=0, values=[roi_pool_P2, roi_pool_P3, roi_pool_P4, roi_pool_P5, roi_pool_P6], name='roi_pool_concat')
 
     @layer
     def proposal_layer(self, input, _feat_strides, anchor_sizes, cfg_key, name):
@@ -337,24 +345,25 @@ class Network(object):
                                      [-1,5], name = 'rpn_rois')
 
         with tf.variable_scope(name) as scope:
-            rpn_rois_P2, rpn_rois_P3, rpn_rois_P4, rpn_rois_P5, rpn_rois = tf.py_func(proposal_layer_py,\
+            rpn_rois_P2, rpn_rois_P3, rpn_rois_P4, rpn_rois_P5, rpn_rois_P6, rpn_rois = tf.py_func(proposal_layer_py,\
                                                         [input[0], input[1],\
                                                          input[2], input[3],\
                                                          input[4], input[5],\
                                                          input[6], input[7],\
                                                          input[8], input[9],\
                                                          input[10], cfg_key, _feat_strides, anchor_sizes],\
-                                                         [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32]);
+                                                         [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32]);
 
             rpn_rois_P2 = tf.reshape(rpn_rois_P2, [-1, 5], name = 'rpn_rois_P2') # shape is (1 x H(P) x W(P) x A(P), 5)
             rpn_rois_P3 = tf.reshape(rpn_rois_P3, [-1, 5], name = 'rpn_rois_P3') # shape is (1 x H(P) x W(P) x A(P), 5)
             rpn_rois_P4 = tf.reshape(rpn_rois_P4, [-1, 5], name = 'rpn_rois_P4') # shape is (1 x H(P) x W(P) x A(P), 5)
             rpn_rois_P5 = tf.reshape(rpn_rois_P5, [-1, 5], name = 'rpn_rois_P5') # shape is (1 x H(P) x W(P) x A(P), 5)
+            rpn_rois_P6 = tf.reshape(rpn_rois_P6, [-1, 5], name = 'rpn_rois_P6') # shape is (1 x H(P) x W(P) x A(P), 5)
             rpn_rois    = tf.reshape(rpn_rois, [-1, 5], name = 'rpn_rois') # shape is (1 x H(P) x W(P) x A(P), 5)
 
             self.layers['rois'] = rpn_rois
 
-            return rpn_rois_P2, rpn_rois_P3, rpn_rois_P4, rpn_rois_P5
+            return rpn_rois_P2, rpn_rois_P3, rpn_rois_P4, rpn_rois_P5, rpn_rois_P6
 
     @layer
     def anchor_target_layer(self, input, _feat_strides, anchor_sizes, name):
@@ -404,10 +413,10 @@ class Network(object):
             input[0] = input[0][0]
         with tf.variable_scope(name) as scope:
             #inputs: 'rpn_rois','gt_boxes', 'gt_ishard', 'dontcare_areas'
-            rois_P2,rois_P3,rois_P4,rois_P5,labels,bbox_targets,bbox_inside_weights,bbox_outside_weights,rois \
+            rois_P2,rois_P3,rois_P4,rois_P5,rois_P6,labels,bbox_targets,bbox_inside_weights,bbox_outside_weights,rois \
                 = tf.py_func(proposal_target_layer_py,
                              [input[0],input[1],input[2],input[3],classes],
-                             [tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32])
+                             [tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32,tf.float32])
             # rois_Px <- (1 x H x W x A(x), 5) e.g. [0, x1, y1, x2, y2]
             # rois = tf.convert_to_tensor(rois, name='rois')
             rois = tf.reshape(rois, [-1, 5], name='rois') # goes to roi_pooling
@@ -415,6 +424,7 @@ class Network(object):
             rois_P3 = tf.reshape(rois_P3, [-1, 5], name='rois_P3') # goes to roi_pooling
             rois_P4 = tf.reshape(rois_P4, [-1, 5], name='rois_P4') # goes to roi_pooling
             rois_P5 = tf.reshape(rois_P5, [-1, 5], name='rois_P5') # goes to roi_pooling
+            rois_P6 = tf.reshape(rois_P6, [-1, 5], name='rois_P6') # goes to roi_pooling
             labels = tf.convert_to_tensor(tf.cast(labels,tf.int32), name = 'labels') # goes to FRCNN loss
             bbox_targets = tf.convert_to_tensor(bbox_targets, name = 'bbox_targets') # goes to FRCNN loss
             bbox_inside_weights = tf.convert_to_tensor(bbox_inside_weights, name = 'bbox_inside_weights')
@@ -422,7 +432,7 @@ class Network(object):
 
             self.layers['rois'] = rois
 
-            return rois_P2, rois_P3, rois_P4, rois_P5, labels, bbox_targets, bbox_inside_weights, bbox_outside_weights, rois
+            return rois_P2, rois_P3, rois_P4, rois_P5, rois_P6, labels, bbox_targets, bbox_inside_weights, bbox_outside_weights, rois
 
 
     '''

@@ -107,17 +107,17 @@ def proposal_target_layer(rpn_rois, gt_boxes, gt_ishard, dontcare_areas, _num_cl
 
     level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
 
-    leveled_rois = [None] * 4
-    leveled_labels = [None] * 4
-    leveled_bbox_targets = [None] * 4
-    leveled_bbox_inside_weights = [None] * 4
-    leveled_bbox_outside_weights = [None] * 4
-    leveled_idxs = [[], [], [], []]
+    leveled_rois = [None] * 5
+    leveled_labels = [None] * 5
+    leveled_bbox_targets = [None] * 5
+    leveled_bbox_inside_weights = [None] * 5
+    leveled_bbox_outside_weights = [None] * 5
+    leveled_idxs = [[], [], [], [], []]
     for idx, roi in enumerate(rois):
         level_idx = level(roi) - 2
         leveled_idxs[level_idx].append(idx)
 
-    for level_idx in xrange(0, 4):
+    for level_idx in xrange(0, 5):
         leveled_rois[level_idx] = rois[leveled_idxs[level_idx]]
         leveled_labels[level_idx] = labels[leveled_idxs[level_idx]]
         leveled_bbox_targets[level_idx] = bbox_targets[leveled_idxs[level_idx]]
@@ -130,7 +130,7 @@ def proposal_target_layer(rpn_rois, gt_boxes, gt_ishard, dontcare_areas, _num_cl
     bbox_inside_weights = np.concatenate(leveled_bbox_inside_weights, axis=0)
     bbox_outside_weights = np.concatenate(leveled_bbox_outside_weights, axis=0)
 
-    return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3], \
+    return leveled_rois[0], leveled_rois[1], leveled_rois[2], leveled_rois[3], leveled_rois[4], \
             labels, bbox_targets, bbox_inside_weights, bbox_outside_weights, rois
 
 def _sample_rois(all_rois, gt_boxes, gt_ishard, dontcare_areas, fg_rois_per_image, rois_per_image, num_classes):

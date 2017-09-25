@@ -431,7 +431,7 @@ class FPN_train(Network):
 
         with tf.variable_scope('Fast-RCNN'):
             #========= RCNN ============
-            (self.feed('P2', 'P3', 'P4', 'P5', 'roi-data')
+            (self.feed('P2', 'P3', 'P4', 'P5', 'P6', 'roi-data')
                  .fpn_roi_pool(7, 7, name='fpn_roi_pooling')
                  .fc(1024, name='fc6')
                  .fc(1024, name='fc7')
@@ -473,15 +473,15 @@ class FPN_train(Network):
         ############# R-CNN
         # classification loss
         cls_score = self.get_output('cls_score') # (R, C+1)
-        label = tf.reshape(self.get_output('roi-data')[4], [-1]) # (R)
+        label = tf.reshape(self.get_output('roi-data')[5], [-1]) # (R)
         cross_entropy_n = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=cls_score, labels=label)
 
         # bounding box regression L1 loss
         bbox_pred = self.get_output('bbox_pred') # (R, (C+1)x4)
-        bbox_targets = self.get_output('roi-data')[5] # (R, (C+1)x4)
+        bbox_targets = self.get_output('roi-data')[6] # (R, (C+1)x4)
         # each element is {0, 1}, represents background (0), objects (1)
-        bbox_inside_weights = self.get_output('roi-data')[6] # (R, (C+1)x4)
-        bbox_outside_weights = self.get_output('roi-data')[7] # (R, (C+1)x4)
+        bbox_inside_weights = self.get_output('roi-data')[7] # (R, (C+1)x4)
+        bbox_outside_weights = self.get_output('roi-data')[8] # (R, (C+1)x4)
 
         loss_box_n = tf.reduce_sum( \
             bbox_outside_weights * self.smooth_l1_dist(bbox_inside_weights * (bbox_pred - bbox_targets)), \
