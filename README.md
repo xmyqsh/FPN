@@ -7,8 +7,8 @@ end2end testing:
 Further improvement may be done by decrease the BATCH_SIZE and learning
 rate for stability of loss curve
 
-python ./faster_rcnn/test_net.py --gpu 0 --weights
-output/FPN_end2end/voc_0712_trainval/FPN_iter_300000.ckpt
+CUDA_VISIBLE_DEVICES=0 python ./faster_rcnn/test_net.py --gpu 0 --weights
+output/FPN_end2end/voc_0712_trainval/FPN_iter_190000.ckpt
 --imdb voc_0712_test --cfg ./experiments/cfgs/FPN_end2end.yml --network
 FPN_test
 
