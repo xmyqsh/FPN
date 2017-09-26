@@ -3,7 +3,7 @@
 
 
 end2end testing:
-[mAP(0.7372)](https://drive.google.com/open?id=0B_qzepxA9F3vbDRnT1JoNjZtekU)
+[mAP(0.7459)](https://drive.google.com/open?id=0B_qzepxA9F3vbDRnT1JoNjZtekU)
 Further improvement may be done by decrease the BATCH_SIZE and learning
 rate for stability of loss curve
 
