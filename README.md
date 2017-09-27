@@ -3,9 +3,8 @@
 
 
 end2end testing:
-[mAP(0.7459)](https://drive.google.com/open?id=0B_qzepxA9F3vbDRnT1JoNjZtekU)
-Further improvement may be done by decrease the BATCH_SIZE and learning
-rate for stability of loss curve
+[mAP(0.7716)](https://drive.google.com/open?id=0B_qzepxA9F3vbDRnT1JoNjZtekU)
+without bells and whistles, without OHEM
 
 CUDA_VISIBLE_DEVICES=0 python ./faster_rcnn/test_net.py --gpu 0 --weights
 output/FPN_end2end/voc_0712_trainval/FPN_iter_190000.ckpt
@@ -33,4 +32,3 @@ tail -f FPN.log
 
 TODO:
 1. imporve end2end training result, test alt_opt training result
-2. acceleration by changing fake fpn_roi_pooling to real tf op
