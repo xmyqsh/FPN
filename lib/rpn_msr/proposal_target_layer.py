@@ -99,7 +99,9 @@ def proposal_target_layer(rpn_rois, gt_boxes, gt_ishard, dontcare_areas, _num_cl
     bbox_targets = bbox_targets.reshape(-1, _num_classes*4)
     bbox_inside_weights = bbox_inside_weights.reshape(-1, _num_classes*4)
 
-    bbox_outside_weights = np.array(bbox_inside_weights > 0).astype(np.float32)
+    #bbox_outside_weights = np.array(bbox_inside_weights > 0).astype(np.float32)
+    bbox_outside_weights = np.array(bbox_inside_weights > 0).astype(np.float32) / (np.sum(labels >= 0) + 1.0)
+    #bbox_outside_weights = np.array(bbox_inside_weights > 0).astype(np.float32) / (np.sum(labels >  0) + 1.0)
 
     # assign rois to level Pk    (P2 ~ P5)
     def calc_level(width, height):
