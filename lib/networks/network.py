@@ -163,7 +163,8 @@ class Network(object):
         with tf.variable_scope(name if reuse == False else '/'.join(name.split('/')[:-1])) as scope:
 
             # init_weights = tf.truncated_normal_initializer(0.0, stddev=0.001)
-            init_weights = tf.contrib.layers.variance_scaling_initializer(factor=0.01, mode='FAN_AVG', uniform=False)
+            #init_weights = tf.contrib.layers.variance_scaling_initializer(factor=0.01, mode='FAN_AVG', uniform=False)
+            init_weights = tf.contrib.layers.variance_scaling_initializer(factor=2.0 if relu else 1.0, mode='FAN_IN', uniform=False if relu else True)
             init_biases = tf.constant_initializer(0.0)
             kernel = self.make_var('weights', [k_h, k_w, c_i, c_o], init_weights, trainable, \
                                    regularizer=self.l2_regularizer(cfg.TRAIN.WEIGHT_DECAY))
@@ -208,7 +209,8 @@ class Network(object):
 
         with tf.variable_scope(name) as scope:
             # init_weights = tf.truncated_normal_initializer(0.0, stddev=0.01)
-            init_weights = tf.contrib.layers.variance_scaling_initializer(factor=0.01, mode='FAN_AVG', uniform=False)
+            #init_weights = tf.contrib.layers.variance_scaling_initializer(factor=0.01, mode='FAN_AVG', uniform=False)
+            init_weights = tf.contrib.layers.variance_scaling_initializer(factor=2.0 if relu else 1.0, mode='FAN_IN', uniform=False if relu else True)
             filters = self.make_var('weights', filter_shape, init_weights, trainable, \
                                    regularizer=self.l2_regularizer(cfg.TRAIN.WEIGHT_DECAY))
             deconv = tf.nn.conv2d_transpose(input, filters, output_shape,
@@ -495,12 +497,17 @@ class Network(object):
             else:
                 feed_in, dim = (input, int(input_shape[-1]))
 
+            '''
             if name == 'bbox_pred':
                 init_weights = tf.truncated_normal_initializer(0.0, stddev=0.001)
                 init_biases = tf.constant_initializer(0.0)
             else:
                 init_weights = tf.truncated_normal_initializer(0.0, stddev=0.01)
                 init_biases = tf.constant_initializer(0.0)
+            '''
+
+            init_weights = tf.contrib.layers.variance_scaling_initializer(factor=2.0 if relu else 1.0, mode='FAN_IN', uniform=False if relu else True)
+            init_biases = tf.constant_initializer(0.0)
 
             weights = self.make_var('weights', [dim, num_out], init_weights, trainable, \
                                     regularizer=self.l2_regularizer(cfg.TRAIN.WEIGHT_DECAY))
@@ -564,7 +571,7 @@ class Network(object):
                 return tf.multiply(l2_weight, tf.nn.l2_loss(tensor), name='value')
         return regularizer
 
-    def smooth_l1_dist(self, deltas, sigma2=9.0, name='smooth_l1_dist'):
+    def smooth_l1_dist(self, deltas, sigma2=3.0, name='smooth_l1_dist'):
         with tf.name_scope(name=name) as scope:
             deltas_abs = tf.abs(deltas)
             smoothL1_sign = tf.cast(tf.less(deltas_abs, 1.0/sigma2), tf.float32)
