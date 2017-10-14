@@ -81,8 +81,12 @@ if __name__ == '__main__':
     cfg.GPU_ID = args.gpu_id
 
     # start a session
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allocator_type = 'BFC'
+    config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 0.90
+    sess = tf.Session(config=config)
     saver = tf.train.Saver()
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     saver.restore(sess, args.model)
     print ('Loading model weights from {:s}').format(args.model)
 
