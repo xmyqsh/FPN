@@ -7,7 +7,7 @@ end2end testing:
 without bells and whistles, without OHEM
 
 CUDA_VISIBLE_DEVICES=0 python ./faster_rcnn/test_net.py --gpu 0 --weights
-output/FPN_end2end/voc_0712_trainval/FPN_iter_330000.ckpt
+output/FPN_end2end/voc_0712_trainval/FPN_iter_370000.ckpt
 --imdb voc_0712_test --cfg ./experiments/cfgs/FPN_end2end.yml --network
 FPN_test
 
