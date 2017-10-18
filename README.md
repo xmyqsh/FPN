@@ -3,7 +3,7 @@
 
 
 end2end testing:
-[mAP(0.7820)](https://drive.google.com/open?id=0B_qzepxA9F3vbDRnT1JoNjZtekU)
+[mAP(0.7832)](https://drive.google.com/open?id=0B_qzepxA9F3vbDRnT1JoNjZtekU)
 without bells and whistles, without OHEM
 
 CUDA_VISIBLE_DEVICES=0 python ./faster_rcnn/test_net.py --gpu 0 --weights
@@ -32,4 +32,5 @@ tail -f FPN.log
 
 TODO:
 1. imporve end2end training result
-2. fix bugs in alt_opt training
+2. check roi_pooling used interpolation or not
+3. fix bugs in alt_opt training

@@ -185,9 +185,9 @@ def proposal_layer(rpn_cls_prob_reshape_P2, rpn_bbox_pred_P2, \
     rpn_rois = blob
 
     if cfg_key == 'TEST':
-        # assign rois to level Pk    (P2 ~ P5)
+        # assign rois to level Pk    (P2 ~ P6)
         def calc_level(width, height):
-            return min(5, max(2, int(4 + np.log2(np.sqrt(width * height) / 224))))
+            return min(6, max(2, int(4 + np.log2(np.sqrt(width * height) / 224))))
 
         level = lambda roi : calc_level(roi[3] - roi[1], roi[4] - roi[2])   # roi: [0, x0, y0, x1, y1]
 
